@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Bot, Check, ChevronRight, FileText, Loader2, MapPin, Plus, Upload, X } from "lucide-react";
+import { Check, ChevronRight, FileText, Loader2, MapPin, Plus, Upload, X } from "lucide-react";
 import type { Company } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 type Step = "upload" | "extracting" | "review" | "enriching" | "done";
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default function OnboardWizard() {
   const router = useRouter();
@@ -40,7 +42,11 @@ export default function OnboardWizard() {
     setStep("extracting");
     const fd = new FormData();
     fd.append("pitch_deck", file);
-    const res = await fetch("/api/companies", { method: "POST", body: fd });
+    // Hold the extraction animation 2s longer so it stays legible on fast responses.
+    const [res] = await Promise.all([
+      fetch("/api/companies", { method: "POST", body: fd }),
+      sleep(2000),
+    ]);
     const data: Company = await res.json();
     setCompany(data);
     setEditedCompany(data);
@@ -51,7 +57,11 @@ export default function OnboardWizard() {
     setStep("extracting");
     const fd = new FormData();
     fd.append("company_name", "TechVenture");
-    const res = await fetch("/api/companies", { method: "POST", body: fd });
+    // Hold the extraction animation 2s longer so it stays legible on fast responses.
+    const [res] = await Promise.all([
+      fetch("/api/companies", { method: "POST", body: fd }),
+      sleep(2000),
+    ]);
     const data: Company = await res.json();
     setCompany(data);
     setEditedCompany(data);
@@ -164,31 +174,7 @@ export default function OnboardWizard() {
   }
 
   if (step === "extracting") {
-    return (
-      <Card>
-        <CardContent className="p-12 text-center">
-          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <Bot className="w-8 h-8 text-emerald-600" />
-          </div>
-          <h3 className="font-semibold text-gray-900 mb-1">Extracting company profile…</h3>
-          <p className="text-sm text-gray-500">Gemini 2.5 Pro is reading the pitch deck</p>
-          <div className="mt-6 flex items-center justify-center gap-2">
-            <div className="flex gap-1">
-              {[0, 1, 2].map(i => (
-                <div key={i} className={`w-2 h-2 rounded-full bg-emerald-400 animate-bounce`} style={{ animationDelay: `${i * 0.15}s` }} />
-              ))}
-            </div>
-          </div>
-          <div className="mt-5 text-left bg-gray-50 rounded-lg p-4 font-mono text-xs text-gray-400 space-y-1">
-            <p>▸ Parsing pitch deck structure…</p>
-            <p>▸ Identifying company overview slide…</p>
-            <p>▸ Extracting sector, stage, founding year…</p>
-            <p>▸ Locating CEO LinkedIn URL…</p>
-            <p className="animate-pulse">▸ Generating structured JSON profile…</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <ExtractionLoader />;
   }
 
   if ((step === "review" || step === "enriching") && company) {
@@ -311,3 +297,357 @@ export default function OnboardWizard() {
 
   return null;
 }
+
+// ── Extraction loader (scan-and-stream animation) ─────────────────────────────
+// Self-contained: ships its own scoped CSS so the keyframe-heavy animation
+// doesn't need Tailwind utilities. All classes are `ext-` prefixed to avoid
+// colliding with global styles.
+
+function ExtractionLoader() {
+  return (
+    <Card className="overflow-hidden">
+      <style>{EXTRACTION_STYLES}</style>
+      <CardContent className="ext-stage flex flex-col items-center p-12">
+        <div className="ext-loader-wrapper">
+          <div className="ext-server-container">
+            <div className="ext-server-disk"><div className="ext-server-light" /></div>
+            <div className="ext-server-disk"><div className="ext-server-light" /></div>
+            <div className="ext-server-disk"><div className="ext-server-light" /></div>
+          </div>
+
+          <div className="ext-upload-beam" />
+
+          <div className="ext-data-stream">
+            <span className="ext-data-particle ext-dp-1" data-char="1" />
+            <span className="ext-data-particle ext-dp-2" data-char="{" />
+            <span className="ext-data-particle ext-dp-3" data-char="0" />
+            <span className="ext-data-particle ext-dp-4" data-char="A" />
+            <span className="ext-data-particle ext-dp-5" data-char="}" />
+            <span className="ext-data-particle ext-dp-6" data-char="1" />
+            <span className="ext-data-particle ext-dp-7" data-char="X" />
+            <span className="ext-data-particle ext-dp-8" data-char="0" />
+          </div>
+
+          <div className="ext-document-container">
+            <div className="ext-scanner-beam" />
+            <div className="ext-doc-line ext-title" />
+            <div className="ext-doc-line" />
+            <div className="ext-doc-line ext-medium" />
+            <div className="ext-doc-line" />
+            <div className="ext-doc-line ext-short" />
+            <div className="ext-doc-line" />
+          </div>
+        </div>
+
+        <div className="ext-loading-container">
+          <div className="ext-loading-title">Extracting Company Profile</div>
+          <div className="ext-loading-subtitle">
+            Gemini 2.5 Pro is reading the pitch deck<span className="ext-dots" />
+          </div>
+          <div className="ext-progress-track">
+            <div className="ext-progress-fill" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+const EXTRACTION_STYLES = `
+.ext-stage {
+  background-color: #f0fdf4;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.8) 0%, rgba(241,245,249,1) 100%),
+    linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 20px 20px, 20px 20px;
+}
+
+.ext-loader-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.ext-server-container {
+  position: relative;
+  width: 60px;
+  height: 50px;
+  margin-bottom: 70px;
+  z-index: 10;
+}
+
+.ext-server-disk {
+  position: absolute;
+  width: 100%;
+  height: 20px;
+  border: 2px solid #22c55e;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 4px 10px rgba(187,247,208,0.4), inset 0 2px 4px rgba(34,197,94,0.3);
+}
+
+.ext-server-disk:nth-child(1) { top: 0; z-index: 3; }
+.ext-server-disk:nth-child(2) { top: 12px; z-index: 2; }
+.ext-server-disk:nth-child(3) { top: 24px; z-index: 1; }
+
+.ext-server-light {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background-color: #86efac;
+  border-radius: 50%;
+  left: 10px;
+  top: 8px;
+  box-shadow: 0 0 5px #86efac;
+  animation: ext-blink-light 1.5s infinite alternate;
+}
+
+.ext-server-disk:nth-child(2) .ext-server-light { animation-delay: 0.5s; background-color: #bef264; box-shadow: 0 0 5px #bef264; }
+.ext-server-disk:nth-child(3) .ext-server-light { animation-delay: 1s; }
+
+@keyframes ext-blink-light {
+  0%, 20% { opacity: 0.2; }
+  80%, 100% { opacity: 1; }
+}
+
+.ext-document-container {
+  position: relative;
+  width: 72px;
+  height: 96px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px 16px 4px 4px;
+  padding: 12px 10px;
+  box-sizing: border-box;
+  box-shadow: 0 10px 25px rgba(187,247,208,0.4), 0 2px 5px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 5;
+}
+
+.ext-document-container::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 17px 17px 0;
+  border-color: transparent #f0fdf4 transparent transparent;
+}
+
+.ext-document-container::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 17px;
+  height: 17px;
+  background: #bbf7d0;
+  border-bottom-left-radius: 4px;
+  box-shadow: -2px 2px 4px rgba(0,0,0,0.08);
+  z-index: 2;
+}
+
+.ext-doc-line {
+  height: 4px;
+  background-color: #bbf7d0;
+  border-radius: 2px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.ext-doc-line.ext-short { width: 60%; }
+.ext-doc-line.ext-medium { width: 85%; }
+.ext-doc-line.ext-title {
+  height: 6px;
+  width: 75%;
+  margin-bottom: 4px;
+  background-color: #86efac;
+}
+
+.ext-doc-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: #4ade80;
+  box-shadow: 0 0 5px #4ade80;
+  animation: ext-scan-highlight 2s infinite linear;
+}
+
+.ext-doc-line:nth-child(2)::after { animation-delay: 0.1s; }
+.ext-doc-line:nth-child(3)::after { animation-delay: 0.2s; }
+.ext-doc-line:nth-child(4)::after { animation-delay: 0.3s; }
+.ext-doc-line:nth-child(5)::after { animation-delay: 0.4s; }
+.ext-doc-line:nth-child(6)::after { animation-delay: 0.5s; }
+
+@keyframes ext-scan-highlight {
+  0% { left: -100%; }
+  20%, 100% { left: 200%; }
+}
+
+.ext-scanner-beam {
+  position: absolute;
+  top: 0;
+  left: -5%;
+  width: 110%;
+  height: 2px;
+  background-color: #4ade80;
+  box-shadow: 0 0 8px #4ade80, 0 2px 15px rgba(56,189,248,0.3);
+  border-radius: 50%;
+  z-index: 6;
+  animation: ext-scan-sweep 2s infinite ease-in-out;
+}
+
+.ext-scanner-beam::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(to bottom, rgba(74,222,128,0.1) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+@keyframes ext-scan-sweep {
+  0% { top: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.ext-data-stream {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.ext-data-particle {
+  position: absolute;
+  color: #22c55e;
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+  text-shadow: 0 1px 2px rgba(99,102,241,0.2);
+}
+
+.ext-data-particle::before { content: attr(data-char); }
+
+.ext-dp-1 { left: 10%; bottom: 10px; animation: ext-extract-data 2.2s infinite 0.1s ease-in; }
+.ext-dp-2 { left: 30%; bottom: 10px; animation: ext-extract-data 2.5s infinite 0.6s ease-in; color: #16a34a; }
+.ext-dp-3 { left: 50%; bottom: 10px; animation: ext-extract-data 1.8s infinite 0.3s ease-in; }
+.ext-dp-4 { left: 70%; bottom: 10px; animation: ext-extract-data 2.1s infinite 0.8s ease-in; color: #047857; }
+.ext-dp-5 { left: 85%; bottom: 10px; animation: ext-extract-data 2.4s infinite 0.4s ease-in; }
+.ext-dp-6 { left: 20%; bottom: 10px; animation: ext-extract-data 1.9s infinite 1.1s ease-in; }
+.ext-dp-7 { left: 60%; bottom: 10px; animation: ext-extract-data 2.6s infinite 0.9s ease-in; color: #16a34a; }
+.ext-dp-8 { left: 40%; bottom: 10px; animation: ext-extract-data 2.3s infinite 1.4s ease-in; }
+
+@keyframes ext-extract-data {
+  0% { transform: translateY(0) scale(0.5); opacity: 0; }
+  20% { opacity: 1; transform: translateY(-20px) scale(1); }
+  80% { opacity: 0.9; transform: translateY(-80px) scale(0.9); }
+  100% { transform: translateY(-110px) scale(0.4); opacity: 0; filter: blur(1px); }
+}
+
+.ext-upload-beam {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 100px;
+  background: linear-gradient(to top, transparent, rgba(34,197,94,0.1));
+  clip-path: polygon(20% 100%, 80% 100%, 100% 0, 0 0);
+  z-index: 1;
+  animation: ext-pulse-beam 2s infinite alternate;
+}
+
+@keyframes ext-pulse-beam {
+  0% { opacity: 0.2; width: 25px; }
+  100% { opacity: 0.6; width: 35px; }
+}
+
+.ext-loading-container {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.ext-loading-title {
+  color: #14532d;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.ext-loading-subtitle {
+  color: #166534;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+.ext-dots {
+  display: inline-block;
+  width: 20px;
+  text-align: left;
+}
+
+.ext-dots::after {
+  content: '';
+  animation: ext-typing-dots 1.5s infinite steps(4, end);
+}
+
+@keyframes ext-typing-dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
+
+.ext-progress-track {
+  width: 150px;
+  height: 4px;
+  background: #dcfce7;
+  border-radius: 4px;
+  margin-top: 12px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.ext-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  width: 0%;
+  border-radius: 4px;
+  animation: ext-load-progress 4s infinite ease-in-out;
+  box-shadow: 0 0 8px rgba(34,197,94,0.4);
+}
+
+@keyframes ext-load-progress {
+  0% { width: 0%; left: 0; }
+  50% { width: 100%; left: 0; }
+  100% { width: 0%; left: 100%; }
+}
+`;
