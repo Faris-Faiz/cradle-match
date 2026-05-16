@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, ChevronUp, ClipboardList, Handshake, Loader2, Search, Users } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, ClipboardList, Handshake, Radar, Search, Users } from "lucide-react";
 import type { CandidatesResult, MatchCandidate, MatchRationale } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +21,24 @@ const dimensionLabels: Record<keyof MatchRationale, string> = {
   chemistry: "Chemistry",
   goal_alignment: "Goal Alignment",
 };
+
+// Sonar scan counter — deliberately non-linear (it repeats and jumps) so the
+// sweep reads as a live, noisy ecosystem scan rather than a smooth progress bar.
+const SCAN_SEQUENCE = [0, 3, 3, 8, 9, 14, 14, 14, 15];
+const SCAN_STEP_MS = 480;
+const SCAN_TARGET = SCAN_SEQUENCE[SCAN_SEQUENCE.length - 1];
+
+// Fixed blip coordinates (% of the sonar box); revealed one-by-one as the
+// counter climbs, so each detected profile lands somewhere on the sweep.
+const SONAR_BLIPS = [
+  { x: 38, y: 22 }, { x: 62, y: 30 }, { x: 56, y: 18 },
+  { x: 74, y: 52 }, { x: 30, y: 48 }, { x: 42, y: 40 },
+  { x: 80, y: 38 }, { x: 24, y: 60 }, { x: 68, y: 64 },
+  { x: 50, y: 66 }, { x: 86, y: 56 }, { x: 34, y: 72 },
+  { x: 58, y: 78 }, { x: 70, y: 80 }, { x: 46, y: 84 },
+];
+
+const SONAR_AGENTS = ["MentorMatcher", "ProgrammeMatcher", "PartnerMatcher"];
 
 function ScoreBar({ score, label }: { score: number; label: string }) {
   const pct = (score / 5) * 100;
@@ -127,26 +145,41 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
   const [approved, setApproved] = useState<Record<string, string>>({});
   const [approving, setApproving] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [scanned, setScanned] = useState(0);
 
   const runMatch = async () => {
     setRunning(true);
     setProgress(0);
+    setScanned(0);
 
+    // Step the sonar counter through SCAN_SEQUENCE; repeated values make the
+    // sweep visibly stall, mimicking a real scan ranking noisy candidates.
+    let step = 0;
     const timer = setInterval(() => {
-      setProgress(p => Math.min(p + 15, 90));
-    }, 400);
+      step += 1;
+      if (step < SCAN_SEQUENCE.length) {
+        setScanned(SCAN_SEQUENCE[step]);
+        setProgress(Math.round((step / (SCAN_SEQUENCE.length - 1)) * 90));
+      }
+    }, SCAN_STEP_MS);
+
+    // Keep the sonar on screen long enough for the full sweep to complete,
+    // even when the mock API resolves near-instantly.
+    const minDuration = new Promise(resolve => setTimeout(resolve, SCAN_SEQUENCE.length * SCAN_STEP_MS));
 
     const res = await fetch(`/api/companies/${companyId}/match`, { method: "POST" });
     const data: CandidatesResult = await res.json();
-
-    clearInterval(timer);
-    setProgress(100);
 
     const info: Record<string, TargetInfo> = {};
     for (const c of [...data.mentors, ...data.programmes, ...data.partners]) {
       const r = await fetch(`/api/target-info/${c.target_type}/${c.target_id}`);
       if (r.ok) info[c.target_id] = await r.json();
     }
+
+    await minDuration;
+    clearInterval(timer);
+    setScanned(SCAN_TARGET);
+    setProgress(100);
     setTargetInfo(info);
     setResult(data);
     setRunning(false);
@@ -204,25 +237,93 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
 
   if (running) {
     return (
-      <Card className="max-w-2xl mx-auto">
-        <CardContent className="p-12 text-center">
-          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+      <Card className="max-w-2xl mx-auto overflow-hidden">
+        <CardContent className="p-12 flex flex-col items-center">
+          <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 mb-8">
+            <Radar className="w-4 h-4 animate-spin" style={{ animationDuration: "2.4s" }} />
+            MatchingOrchestrator · sweeping the ecosystem
           </div>
-          <h3 className="font-semibold text-gray-900 mb-1">ADK agents running…</h3>
-          <p className="text-sm text-gray-500 mb-6">MentorMatcher · ProgrammeMatcher · PartnerMatcher running in parallel</p>
 
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-4">
+          {/* Sonar scope — concentric rings, a rotating sweep, and detected blips */}
+          <div className="relative w-64 h-64 mb-8 select-none">
+            {[0, 18, 36].map(inset => (
+              <div
+                key={inset}
+                className="absolute rounded-full border border-emerald-200/70"
+                style={{ inset: `${inset}%` }}
+              />
+            ))}
+            {/* crosshair axes */}
+            <div className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 bg-emerald-100" />
+            <div className="absolute top-1/2 left-0 right-0 h-px -translate-y-1/2 bg-emerald-100" />
+
+            {/* outward radar pulse */}
+            <div className="absolute inset-[26%] rounded-full border border-emerald-300 animate-ping" />
+
+            {/* rotating conic sweep */}
+            <div
+              className="absolute inset-0 rounded-full animate-spin"
+              style={{
+                animationDuration: "2.4s",
+                background:
+                  "conic-gradient(from 0deg, transparent 0deg 300deg, rgba(16,185,129,0.04) 320deg, rgba(16,185,129,0.32) 360deg)",
+              }}
+            />
+            {/* leading sweep spoke */}
+            {/* <div
+              className="absolute left-1/2 top-1/2 h-px w-1/2 origin-left animate-spin"
+              style={{
+                animationDuration: "2.4s",
+                background: "linear-gradient(to right, rgba(5,150,105,0.9), transparent)",
+              }}
+            /> */}
+
+            {/* detected blips, revealed as the counter climbs */}
+            {SONAR_BLIPS.map((b, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "absolute -translate-x-1/2 -translate-y-1/2 transition-opacity duration-500",
+                  i < scanned ? "opacity-100" : "opacity-0",
+                )}
+                style={{ left: `${b.x}%`, top: `${b.y}%` }}
+              >
+                <span className="absolute -inset-1.5 rounded-full bg-emerald-400/40 animate-ping" />
+                <span className="block w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.9)]" />
+              </div>
+            ))}
+
+            {/* live counter at the centre */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="flex flex-col items-center justify-center w-28 h-28 rounded-full bg-white/80 backdrop-blur-sm">
+                <span className="text-5xl font-bold text-emerald-600 tabular-nums leading-none">{scanned}</span>
+                <span className="text-[10px] uppercase tracking-wide text-gray-400 mt-1">profiles scanned</span>
+              </div>
+            </div>
+          </div>
+
+          <h3 className="font-semibold text-gray-900 mb-1">Scanning matches for {companyName}…</h3>
+          <p className="text-sm text-gray-500 mb-6">3 ADK sub-agents sweeping mentors, programmes and partners in parallel</p>
+
+          <div className="h-1.5 w-full max-w-sm bg-gray-100 rounded-full overflow-hidden mb-5">
             <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
 
-          <div className="space-y-2 text-left bg-gray-50 rounded-lg p-4 font-mono text-xs text-gray-400">
-            <p className={progress > 0 ? "text-emerald-600" : ""}>▸ MatchingOrchestrator initialised</p>
-            <p className={progress > 20 ? "text-emerald-600" : ""}>▸ Fetching {companyName} profile from Firestore</p>
-            <p className={progress > 35 ? "text-emerald-600" : ""}>▸ MentorMatcher: ranking 15 mentor profiles…</p>
-            <p className={progress > 50 ? "text-emerald-600" : ""}>▸ ProgrammeMatcher: evaluating 3 tracks…</p>
-            <p className={progress > 65 ? "text-emerald-600" : ""}>▸ PartnerMatcher: scoring 10 ecosystem partners…</p>
-            <p className={progress > 80 ? "text-emerald-600" : "animate-pulse"}>▸ Collating results into unified review…</p>
+          <div className="flex items-center justify-center gap-6 text-xs text-gray-400">
+            {SONAR_AGENTS.map((a, i) => {
+              const active = progress > (i + 1) * 20;
+              return (
+                <div key={a} className="flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "w-2 h-2 rounded-full",
+                      active ? "bg-emerald-500 animate-pulse" : "bg-gray-300",
+                    )}
+                  />
+                  <span className={cn(active && "text-emerald-600")}>{a}</span>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
