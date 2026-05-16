@@ -24,7 +24,6 @@ export default function Sidebar() {
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {nav.map(({ href, label, icon }) => {
-          const active = pathname === href || (href !== "/companies/new" && pathname.startsWith(href) && href !== "/companies" ? pathname.startsWith(href) : pathname === href);
           const isPortfolio = href === "/companies" && pathname.startsWith("/companies") && pathname !== "/companies/new";
           const isActive = href === "/companies" ? isPortfolio : pathname === href;
 

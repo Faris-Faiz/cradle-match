@@ -1,3 +1,4 @@
+import Link from "next/link";
 import MatchingBoard from "@/components/matching-board";
 import { getCompany } from "@/lib/services/data";
 
@@ -9,9 +10,9 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     <div className="p-8">
       <div className="mb-6">
         <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
-          <span>Portfolio</span>
+          <Link href="/companies" className="hover:text-gray-600">Portfolio</Link>
           <span>→</span>
-          <span className="text-gray-600">{company?.name ?? id}</span>
+          <Link href={`/companies/${id}`} className="text-gray-600 hover:text-gray-900">{company?.name ?? id}</Link>
           <span>→</span>
           <span className="text-gray-900 font-medium">Find Matches</span>
         </div>
