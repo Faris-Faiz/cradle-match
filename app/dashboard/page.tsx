@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight, Plus } from "lucide-react";
 import { getCompanies, getRelationships, getMilestones, getMentor, getProgramme, getPartner } from "@/lib/services/data";
 import type { Milestone } from "@/lib/types";
 
@@ -68,7 +69,7 @@ export default async function DashboardPage() {
           <p className="text-sm text-gray-500 mt-1">2026 Portfolio — Active Pairings & Milestone Health</p>
         </div>
         <Link href="/companies/new" className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
-          <span>＋</span> Onboard Startup
+          <Plus className="w-4 h-4" /> Onboard Startup
         </Link>
       </div>
 
@@ -141,8 +142,8 @@ export default async function DashboardPage() {
               </div>
 
               <div className="shrink-0">
-                <Link href={`/relationships/${relationship.id}`} className="text-xs text-gray-400 hover:text-emerald-600 transition-colors font-medium">
-                  View →
+                <Link href={`/relationships/${relationship.id}`} className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 transition-colors font-medium">
+                  View <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>

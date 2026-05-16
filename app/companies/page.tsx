@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight, Plus } from "lucide-react";
 import { getCompanies, getRelationships, getMilestones } from "@/lib/services/data";
 
 const stageColors: Record<string, string> = {
@@ -24,7 +25,7 @@ export default async function CompaniesPage() {
           <p className="text-sm text-gray-500 mt-1">{companies.length} companies in the 2026 cohort</p>
         </div>
         <Link href="/companies/new" className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
-          ＋ Onboard Startup
+          <Plus className="w-4 h-4" /> Onboard Startup
         </Link>
       </div>
 
@@ -62,8 +63,8 @@ export default async function CompaniesPage() {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
-                  <Link href={`/companies/${company.id}/match`} className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
-                    Find Matches →
+                  <Link href={`/companies/${company.id}/match`} className="inline-flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+                    Find Matches <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                   <Link href={`/companies/${company.id}`} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
                     View Profile

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight, ChevronRight, ExternalLink } from "lucide-react";
 import { getCompany, getRelationships, getMilestones, getMentor, getProgramme, getPartner } from "@/lib/services/data";
 import { notFound } from "next/navigation";
 
@@ -34,7 +35,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
     <div className="p-8 max-w-5xl mx-auto">
       <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
         <Link href="/companies" className="hover:text-gray-600">Portfolio</Link>
-        <span>→</span>
+        <ChevronRight className="w-3.5 h-3.5" />
         <span className="text-gray-900 font-medium">{company.name}</span>
       </div>
 
@@ -46,8 +47,8 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
             <p className="text-sm text-gray-500">{company.sector} · {company.stage} · Est. {company.founded_year}</p>
           </div>
         </div>
-        <Link href={`/companies/${id}/match`} className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
-          Find Matches →
+        <Link href={`/companies/${id}/match`} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+          Find Matches <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
 
@@ -75,7 +76,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                       <span className="text-xs px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full capitalize">{rel.target_type}</span>
                       <span className="text-sm font-medium text-gray-800">{rel.targetName}</span>
                     </div>
-                    <Link href={`/relationships/${rel.id}`} className="text-xs text-emerald-600 hover:underline">View →</Link>
+                    <Link href={`/relationships/${rel.id}`} className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:underline">View <ArrowRight className="w-3.5 h-3.5" /></Link>
                   </div>
                 ))}
               </div>
@@ -107,7 +108,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
               <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-bold">{company.ceo_name[0]}</div>
               <div>
                 <p className="text-sm font-semibold text-gray-900">{company.ceo_name}</p>
-                <a href={company.ceo_linkedin_url} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline">LinkedIn ↗</a>
+                <a href={company.ceo_linkedin_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline">LinkedIn <ExternalLink className="w-3 h-3" /></a>
               </div>
             </div>
             {company.ceo_profile && (

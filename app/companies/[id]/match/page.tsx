@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import MatchingBoard from "@/components/matching-board";
 import { getCompany } from "@/lib/services/data";
 
@@ -10,9 +11,9 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       <div className="mb-6">
         <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
           <span>Portfolio</span>
-          <span>→</span>
+          <ChevronRight className="w-3.5 h-3.5" />
           <span className="text-gray-600">{company?.name ?? id}</span>
-          <span>→</span>
+          <ChevronRight className="w-3.5 h-3.5" />
           <span className="text-gray-900 font-medium">Find Matches</span>
         </div>
         <h1 className="text-2xl font-semibold text-gray-900">Find Matches for {company?.name ?? "Startup"}</h1>

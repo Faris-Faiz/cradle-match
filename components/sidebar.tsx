@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LayoutDashboard, Building2, Plus, type LucideIcon } from "lucide-react";
 
-const nav = [
-  { href: "/dashboard", label: "Dashboard", icon: "⬛" },
-  { href: "/companies", label: "Portfolio", icon: "🏢" },
-  { href: "/companies/new", label: "Onboard Startup", icon: "＋" },
+const nav: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/companies", label: "Portfolio", icon: Building2 },
+  { href: "/companies/new", label: "Onboard Startup", icon: Plus },
 ];
 
 export default function Sidebar() {
@@ -23,7 +24,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {nav.map(({ href, label, icon }) => {
+        {nav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href !== "/companies/new" && pathname.startsWith(href) && href !== "/companies" ? pathname.startsWith(href) : pathname === href);
           const isPortfolio = href === "/companies" && pathname.startsWith("/companies") && pathname !== "/companies/new";
           const isActive = href === "/companies" ? isPortfolio : pathname === href;
@@ -38,7 +39,7 @@ export default function Sidebar() {
                   : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
               }`}
             >
-              <span className="text-base leading-none">{icon}</span>
+              <Icon className="w-4 h-4 shrink-0" />
               {label}
             </Link>
           );

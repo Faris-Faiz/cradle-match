@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRight, Check, ChevronDown, ChevronUp, ClipboardList, Handshake, Loader2, Search, Users } from "lucide-react";
 import type { CandidatesResult, MatchCandidate, MatchRationale } from "@/lib/types";
 
 interface TargetInfo {
@@ -79,9 +80,10 @@ function CandidateCard({
 
       <button
         onClick={() => setExpanded(!expanded)}
-        className="text-xs text-gray-400 hover:text-gray-600 transition-colors mb-3"
+        className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors mb-3"
       >
-        {expanded ? "▲ Hide rationale" : "▼ Show rationale"}
+        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        {expanded ? "Hide rationale" : "Show rationale"}
       </button>
 
       {expanded && (
@@ -97,16 +99,16 @@ function CandidateCard({
 
       {approved ? (
         <div className="flex items-center gap-2 bg-emerald-50 rounded-lg px-3 py-2">
-          <span className="text-emerald-600 text-sm">✓</span>
+          <Check className="w-4 h-4 text-emerald-600" />
           <span className="text-sm text-emerald-700 font-medium">Approved</span>
         </div>
       ) : (
         <button
           onClick={onApprove}
           disabled={approving}
-          className="w-full py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors"
         >
-          {approving ? "Approving…" : "Approve →"}
+          {approving ? "Approving…" : <>Approve <ArrowRight className="w-4 h-4" /></>}
         </button>
       )}
     </div>
@@ -173,7 +175,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-12 text-center max-w-2xl mx-auto">
         <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <span className="text-3xl">🔍</span>
+          <Search className="w-8 h-8 text-gray-400" />
         </div>
         <h3 className="font-semibold text-gray-900 mb-2">Ready to run matching</h3>
         <p className="text-sm text-gray-500 mb-6">
@@ -189,9 +191,9 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
         </div>
         <button
           onClick={runMatch}
-          className="px-8 py-3 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors"
+          className="inline-flex items-center gap-2 px-8 py-3 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors"
         >
-          Run Matching Agents →
+          Run Matching Agents <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     );
@@ -201,7 +203,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-12 text-center max-w-2xl mx-auto">
         <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <span className="text-3xl animate-spin">⟳</span>
+          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
         </div>
         <h3 className="font-semibold text-gray-900 mb-1">ADK agents running…</h3>
         <p className="text-sm text-gray-500 mb-6">MentorMatcher · ProgrammeMatcher · PartnerMatcher running in parallel</p>
@@ -223,9 +225,9 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
   }
 
   const columns = [
-    { label: "Mentors", key: "mentors", candidates: result!.mentors, emoji: "👤" },
-    { label: "Programmes", key: "programmes", candidates: result!.programmes, emoji: "📋" },
-    { label: "Partners", key: "partners", candidates: result!.partners, emoji: "🤝" },
+    { label: "Mentors", key: "mentors", candidates: result!.mentors, icon: Users },
+    { label: "Programmes", key: "programmes", candidates: result!.programmes, icon: ClipboardList },
+    { label: "Partners", key: "partners", candidates: result!.partners, icon: Handshake },
   ];
 
   const anyApproved = Object.keys(approved).length > 0;
@@ -233,15 +235,16 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <p className="text-sm text-gray-500">
-          ✓ Results ready · {new Date(result!.generated_at).toLocaleTimeString()} · Select candidates to approve
+        <p className="flex items-center gap-1.5 text-sm text-gray-500">
+          <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+          Results ready · {new Date(result!.generated_at).toLocaleTimeString()} · Select candidates to approve
         </p>
         {anyApproved && (
           <button
             onClick={activateApproved}
-            className="px-5 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
           >
-            Activate Approved ({Object.keys(approved).length}) →
+            Activate Approved ({Object.keys(approved).length}) <ArrowRight className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -250,7 +253,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
         {columns.map(col => (
           <div key={col.key}>
             <div className="flex items-center gap-2 mb-3">
-              <span>{col.emoji}</span>
+              <col.icon className="w-4 h-4 text-gray-500" />
               <h3 className="font-semibold text-gray-800 text-sm">{col.label}</h3>
               <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">{col.candidates.length}</span>
             </div>

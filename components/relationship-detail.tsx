@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ArrowLeftRight, ArrowRight, Calendar, Check, ChevronRight, Loader2 } from "lucide-react";
 import type { Company, EmailDraft, Milestone, MatchRationale, Relationship } from "@/lib/types";
 
 const milestoneColors: Record<string, { bg: string; dot: string; label: string }> = {
@@ -102,9 +103,9 @@ export default function RelationshipDetail({
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
         <Link href="/dashboard" className="hover:text-gray-600">Dashboard</Link>
-        <span>→</span>
+        <ChevronRight className="w-3.5 h-3.5" />
         <Link href={`/companies/${company?.id}`} className="hover:text-gray-600">{company?.name ?? "Company"}</Link>
-        <span>→</span>
+        <ChevronRight className="w-3.5 h-3.5" />
         <span className="text-gray-900">Relationship</span>
       </div>
 
@@ -112,8 +113,10 @@ export default function RelationshipDetail({
       <div className="flex items-start justify-between mb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {company?.name} ↔ {targetName}
+            <h1 className="flex items-center gap-2 text-2xl font-semibold text-gray-900">
+              {company?.name}
+              <ArrowLeftRight className="w-5 h-5 text-gray-400 shrink-0" />
+              {targetName}
             </h1>
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${stateColor[relationship.state]}`}>
               {relationship.state}
@@ -134,11 +137,13 @@ export default function RelationshipDetail({
           >
             {activating ? (
               <>
-                <span className="animate-spin">⟳</span>
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Activating…
               </>
             ) : (
-              "Activate Relationship →"
+              <>
+                Activate Relationship <ArrowRight className="w-4 h-4" />
+              </>
             )}
           </button>
         )}
@@ -191,7 +196,7 @@ export default function RelationshipDetail({
                             <p className="text-sm font-semibold text-gray-900">{m.title}</p>
                             <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{m.description}</p>
                             <div className="flex items-center gap-3 mt-2">
-                              <span className="text-xs text-gray-400">🗓 {m.target_date}</span>
+                              <span className="flex items-center gap-1 text-xs text-gray-400"><Calendar className="w-3 h-3 shrink-0" /> {m.target_date}</span>
                               <span className="text-xs text-gray-400">{m.quarter}</span>
                               {m.source === "ai_drafted" && (
                                 <span className="text-xs text-gray-400 bg-white border border-gray-200 rounded-full px-2 py-0.5">AI drafted</span>
@@ -275,13 +280,13 @@ export default function RelationshipDetail({
                 <button
                   onClick={saveDraft}
                   disabled={savingDraft}
-                  className="w-full py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center justify-center gap-1 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
                 >
-                  {savingDraft ? "Saving…" : draftSaved ? "✓ Saved" : "Save Draft"}
+                  {savingDraft ? "Saving…" : draftSaved ? <><Check className="w-3.5 h-3.5" /> Saved</> : "Save Draft"}
                 </button>
                 {!draft.sent_at && (
-                  <button className="w-full py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors">
-                    Mark as Sent →
+                  <button className="w-full flex items-center justify-center gap-2 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors">
+                    Mark as Sent <ArrowRight className="w-4 h-4" />
                   </button>
                 )}
                 {draft.sent_at && (

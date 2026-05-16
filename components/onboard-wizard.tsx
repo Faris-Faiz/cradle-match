@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRight, Bot, Check, ChevronRight, FileText, Loader2, MapPin, Plus, Upload, X } from "lucide-react";
 import type { Company } from "@/lib/types";
 
 type Step = "upload" | "extracting" | "review" | "enriching" | "done";
@@ -100,7 +101,7 @@ export default function OnboardWizard() {
             <div key={s} className="flex items-center gap-2">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? "bg-emerald-600 text-white" : "bg-gray-200 text-gray-400"}`}>{i + 1}</div>
               <span className={`text-sm ${i === 0 ? "text-gray-900 font-medium" : "text-gray-400"}`}>{s}</span>
-              {i < 2 && <span className="text-gray-300 mx-1">→</span>}
+              {i < 2 && <ChevronRight className="w-4 h-4 text-gray-300 mx-1" />}
             </div>
           ))}
         </div>
@@ -119,7 +120,7 @@ export default function OnboardWizard() {
           {file ? (
             <div>
               <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">📄</span>
+                <FileText className="w-7 h-7 text-emerald-600" />
               </div>
               <p className="text-sm font-medium text-emerald-700">{file.name}</p>
               <p className="text-xs text-gray-400 mt-1">{(file.size / 1024).toFixed(0)} KB · PDF</p>
@@ -127,7 +128,7 @@ export default function OnboardWizard() {
           ) : (
             <div>
               <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">📤</span>
+                <Upload className="w-7 h-7 text-gray-400" />
               </div>
               <p className="text-sm font-medium text-gray-700">Drop pitch deck here</p>
               <p className="text-xs text-gray-400 mt-1">PDF · Gemini 2.5 Pro will extract the company profile</p>
@@ -139,9 +140,9 @@ export default function OnboardWizard() {
           <button
             onClick={handleExtract}
             disabled={!file}
-            className="flex-1 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            Extract Profile with Gemini →
+            Extract Profile with Gemini <ArrowRight className="w-4 h-4" />
           </button>
           <button
             onClick={handleUseDemoFile}
@@ -158,7 +159,7 @@ export default function OnboardWizard() {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
         <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-          <span className="text-3xl">🤖</span>
+          <Bot className="w-8 h-8 text-emerald-600" />
         </div>
         <h3 className="font-semibold text-gray-900 mb-1">Extracting company profile…</h3>
         <p className="text-sm text-gray-500">Gemini 2.5 Pro is reading the pitch deck</p>
@@ -189,16 +190,16 @@ export default function OnboardWizard() {
             <div key={s} className="flex items-center gap-2">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                 i === 0 ? "bg-emerald-600 text-white" : i === 1 ? "bg-emerald-600 text-white" : "bg-gray-200 text-gray-400"
-              }`}>{i === 0 ? "✓" : i + 1}</div>
+              }`}>{i === 0 ? <Check className="w-3.5 h-3.5" /> : i + 1}</div>
               <span className={`text-sm ${i <= 1 ? "text-gray-900 font-medium" : "text-gray-400"}`}>{s}</span>
-              {i < 2 && <span className="text-gray-300 mx-1">→</span>}
+              {i < 2 && <ChevronRight className="w-4 h-4 text-gray-300 mx-1" />}
             </div>
           ))}
         </div>
 
         {/* Extracted badge */}
         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
-          <span className="text-emerald-600 text-sm">✓</span>
+          <Check className="w-4 h-4 text-emerald-600" />
           <span className="text-sm text-emerald-700 font-medium">Profile extracted from pitch deck</span>
           <span className="text-xs text-emerald-500 ml-auto">Gemini 2.5 Pro · {new Date().toLocaleTimeString()}</span>
         </div>
@@ -226,8 +227,8 @@ export default function OnboardWizard() {
                   <span className="text-sm text-gray-700">{need}</span>
                   <button
                     onClick={() => setEditedCompany(prev => ({ ...prev, needs: (prev.needs ?? []).filter((_, j) => j !== i) }))}
-                    className="text-gray-400 hover:text-red-500 ml-1 text-xs"
-                  >✕</button>
+                    className="text-gray-400 hover:text-red-500 ml-1"
+                  ><X className="w-3 h-3" /></button>
                 </div>
               ))}
               <button
@@ -235,8 +236,8 @@ export default function OnboardWizard() {
                   const v = prompt("Add a need:");
                   if (v) setEditedCompany(prev => ({ ...prev, needs: [...(prev.needs ?? []), v] }));
                 }}
-                className="text-xs text-emerald-600 border border-emerald-200 rounded-full px-3 py-1 hover:bg-emerald-50"
-              >+ Add</button>
+                className="inline-flex items-center gap-1 text-xs text-emerald-600 border border-emerald-200 rounded-full px-3 py-1 hover:bg-emerald-50"
+              ><Plus className="w-3 h-3" /> Add</button>
             </div>
           </div>
         </div>
@@ -255,10 +256,12 @@ export default function OnboardWizard() {
             >
               {enriching ? (
                 <>
-                  <span className="animate-spin">⟳</span> Enriching…
+                  <Loader2 className="w-4 h-4 animate-spin" /> Enriching…
                 </>
               ) : (
-                "Enrich via Apify →"
+                <>
+                  Enrich via Apify <ArrowRight className="w-4 h-4" />
+                </>
               )}
             </button>
           </div>
@@ -266,7 +269,7 @@ export default function OnboardWizard() {
           {company.ceo_profile && (
             <div className="mt-4 bg-gray-50 rounded-lg p-4 space-y-2">
               <p className="text-sm font-medium text-gray-900">{company.ceo_profile.headline}</p>
-              <p className="text-xs text-gray-600">📍 {company.ceo_profile.current_role}</p>
+              <p className="flex items-center gap-1 text-xs text-gray-600"><MapPin className="w-3 h-3 shrink-0" /> {company.ceo_profile.current_role}</p>
               <div className="flex flex-wrap gap-2 mt-2">
                 {company.ceo_profile.past_roles.map(r => (
                   <span key={r} className="text-xs bg-white border border-gray-200 rounded-full px-2.5 py-1 text-gray-600">{r}</span>
@@ -278,9 +281,9 @@ export default function OnboardWizard() {
 
         <button
           onClick={handleSaveAndMatch}
-          className="w-full py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors"
         >
-          Save Profile &amp; Find Matches →
+          Save Profile &amp; Find Matches <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     );
