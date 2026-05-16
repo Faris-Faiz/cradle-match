@@ -91,6 +91,50 @@ All under `app/api/`. Route handler `params` are typed as `Promise<{ id: string 
 
 Activation auto-generates 3 milestones (`ai_drafted`) and, for mentor relationships, drafts an intro email.
 
+## Conventions
+
+These standards reflect how the existing codebase is written. Match them exactly in any new or modified code so the codebase stays consistent.
+
+### Naming conventions
+
+| Kind | Style | Examples |
+|------|-------|----------|
+| Types, interfaces, type aliases (incl. union types) | `PascalCase` | `Company`, `MatchRationale`, `CandidatesResult`, `Stage`, `RelationshipState`, `TargetInfo` |
+| React components | `PascalCase` | `MatchingBoard`, `OnboardWizard`, `ScoreBar`, `CandidateCard` |
+| Functions and methods | `camelCase`, verb-first | `runMatching`, `extractProfile`, `generateMilestones`, `seedStore`, `avgScore` |
+| Mock-implementation functions | `camelCase`, prefixed with `mock` | `mockMatch`, `mockMentorRationale`, `mockProgrammeRationale` |
+| Local variables and function parameters | `camelCase` | `skillScore`, `stageScore`, `totalScore`, `q2End` |
+| Exported config object | `camelCase` keys | `config.mockDataStore`, `config.mockMatching` |
+| Module-level constant values (esp. prompt templates) | `SCREAMING_SNAKE_CASE` | `MENTOR_PROMPT`, `PROGRAMME_PROMPT`, `PARTNER_PROMPT` |
+| Environment variables | `SCREAMING_SNAKE_CASE` | `MOCK_DATA_STORE`, `GOOGLE_CLOUD_PROJECT`, `GEMINI_MODEL` |
+| API route HTTP handlers | uppercase HTTP verb | `GET`, `POST`, `PATCH` |
+| File names (components, services, modules) | `kebab-case` | `matching-board.tsx`, `onboard-wizard.tsx`, `relationship-detail.tsx`, `data.ts` |
+
+**Domain data fields use `snake_case`.** Every property on a persisted/serialised entity — `Company`, `Mentor`, `Relationship`, `Milestone`, `MatchCandidate`, etc. — is `snake_case` (`ceo_name`, `target_type`, `created_at`, `funding_rationale`, `skill_fit`, `stage_experience`). This mirrors the Firestore document shape and the JSON exchanged with API routes and Gemini. Do **not** introduce `camelCase` fields on these types; the `snake_case` boundary is intentional. `camelCase` is only for code-level identifiers (locals, functions, the `config` object).
+
+**Entity IDs are prefixed by type.** Seeded and generated IDs use a short two-letter prefix: companies `co-`, mentors `mn-`, programmes `pr-`, partners `pa-` (e.g. `co-001`, `mn-xxx`). Keep prefixes consistent when creating new records.
+
+**Other conventions:**
+- Prefer unprefixed parameter names; prefix an intentionally unused handler argument with `_` (e.g. `POST(_req: Request, …)`).
+- Boolean variables and config flags read as predicates (`approved`, `approving`, `expanded`, `mockMatching`).
+- Import shared types with `import type { … }` and the `@/` path alias (`import type { Company } from "@/lib/types"`).
+
+### Comment standards
+
+The codebase favours **sparse, high-signal comments**. Code is expected to be self-documenting through naming; comments explain *why*, non-obvious intent, or boundaries — never restate *what* the code already says.
+
+- **Section dividers** — group related declarations within a file using a box-drawing divider comment. Pad the line to roughly 80 columns:
+  ```ts
+  // ── Mock scoring (keyword overlap) ────────────────────────────────────────────
+  // ── Live: Gemini re-ranking ───────────────────────────────────────────────────
+  // ── Public ─────────────────────────────────────────────────────────────────────
+  ```
+- **File / module intent** — when a file's behaviour is not obvious, lead with a single-line comment explaining the rule that governs it (see the top of [lib/config.ts](lib/config.ts)).
+- **Inline rationale** — place a brief comment directly above the line or block it explains, in sentence case. Document the *reason* a value or branch exists, especially mock-vs-live behaviour and external-shape constraints.
+- **Tooling directives** — keep ESLint/TS suppression comments scoped to the single line they affect and explain nothing further (e.g. `// eslint-disable-next-line no-var`).
+- **No JSDoc blocks.** The codebase does not use `/** … */` doc comments; types carry the contract. Don't add them unless documenting a genuinely subtle public API.
+- **Keep comments truthful.** When you change code, update or delete any comment it invalidates in the same edit. A stale comment is worse than none.
+
 ## Environment
 
 Copy `.env.example` to `.env.local`. All `MOCK_*` flags default to `true` so the app runs with zero credentials. To connect live services, set the relevant flag to `"false"` and supply the corresponding credentials (`GOOGLE_CLOUD_PROJECT`, `GOOGLE_APPLICATION_CREDENTIALS_JSON`, `APIFY_API_TOKEN`, etc.). When connecting Firestore for the first time, call `POST /api/seed` once to populate collections.
