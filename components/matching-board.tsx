@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Check, ChevronDown, ChevronUp, ClipboardList, Handshake, Radar, Search, Users } from "lucide-react";
+import { AlertTriangle, Check, ClipboardList, Handshake, HelpCircle, Radar, Search, Users } from "lucide-react";
 import type { CandidatesResult, MatchCandidate, MatchRationale } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface TargetInfo {
@@ -40,7 +41,7 @@ const SONAR_BLIPS = [
 
 const SONAR_AGENTS = ["MentorMatcher", "ProgrammeMatcher", "PartnerMatcher"];
 
-function ScoreBar({ score, label }: { score: number; label: string }) {
+function ScoreBar({ score, label, reason }: { score: number; label: string; reason: string }) {
   const color = score >= 4 ? "bg-emerald-500" : score >= 3 ? "bg-amber-400" : "bg-red-400";
   return (
     <div className="flex items-center gap-2">
@@ -50,11 +51,19 @@ function ScoreBar({ score, label }: { score: number; label: string }) {
           <div
             key={n}
             className={cn("h-2 flex-1 rounded-full", n <= score ? color : "bg-gray-200")}
-            title={`${label} — ${score}/5`}
           />
         ))}
       </div>
       <span className="text-xs font-semibold text-gray-700 w-4 text-right">{score}</span>
+      <Tooltip>
+        <TooltipTrigger
+          aria-label={`${label} rationale`}
+          className="text-gray-300 transition-colors hover:text-gray-500"
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+        </TooltipTrigger>
+        <TooltipContent>{reason}</TooltipContent>
+      </Tooltip>
     </div>
   );
 }
@@ -72,7 +81,6 @@ function CandidateCard({
   approved: boolean;
   approving: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
   const totalScore = Math.round(candidate.score * 100);
 
   return (
@@ -102,30 +110,9 @@ function CandidateCard({
 
         <div className="space-y-1.5 mb-3">
           {(Object.entries(candidate.rationale) as [keyof MatchRationale, { score: number; reason: string }][]).map(([dim, val]) => (
-            <ScoreBar key={dim} score={val.score} label={dimensionLabels[dim]} />
+            <ScoreBar key={dim} score={val.score} label={dimensionLabels[dim]} reason={val.reason} />
           ))}
         </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setExpanded(!expanded)}
-          className="mb-3 text-gray-400 hover:text-gray-600"
-        >
-          {expanded ? <ChevronUp /> : <ChevronDown />}
-          {expanded ? "Hide rationale" : "Show rationale"}
-        </Button>
-
-        {expanded && (
-          <div className="mb-3 space-y-2 bg-gray-50 rounded-lg p-3">
-            {(Object.entries(candidate.rationale) as [keyof MatchRationale, { score: number; reason: string }][]).map(([dim, val]) => (
-              <div key={dim}>
-                <p className="text-xs font-semibold text-gray-700">{dimensionLabels[dim]}</p>
-                <p className="text-xs text-gray-500 leading-relaxed">{val.reason}</p>
-              </div>
-            ))}
-          </div>
-        )}
 
         {approved ? (
           <div className="flex items-center gap-2 bg-emerald-50 rounded-lg px-3 py-2 mt-auto">

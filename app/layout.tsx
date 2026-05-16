@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Poppins is the main UI typeface; exposed as --font-sans for Tailwind's font-sans
 const poppins = Poppins({
@@ -20,10 +21,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${poppins.variable} ${geistMono.variable} h-full`}>
       <body className="h-full flex bg-gray-50">
-        <Sidebar />
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
+        <TooltipProvider>
+          <Sidebar />
+          <main className="flex-1 overflow-auto">
+            {children}
+          </main>
+        </TooltipProvider>
       </body>
     </html>
   );
