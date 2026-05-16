@@ -4,6 +4,12 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Bot, Check, ChevronRight, FileText, Loader2, MapPin, Plus, Upload, X } from "lucide-react";
 import type { Company } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 type Step = "upload" | "extracting" | "review" | "enriching" | "done";
 
@@ -74,17 +80,17 @@ export default function OnboardWizard() {
 
   const field = (key: keyof Company, label: string, multiline = false) => (
     <div key={key}>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      <Label className="mb-1 text-xs text-gray-600">{label}</Label>
       {multiline ? (
-        <textarea
-          className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        <Textarea
+          className="resize-none text-gray-900"
           rows={3}
           value={(editedCompany[key] as string) ?? ""}
           onChange={e => setEditedCompany(prev => ({ ...prev, [key]: e.target.value }))}
         />
       ) : (
-        <input
-          className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        <Input
+          className="text-gray-900"
           value={(editedCompany[key] as string) ?? ""}
           onChange={e => setEditedCompany(prev => ({ ...prev, [key]: e.target.value }))}
         />
@@ -137,19 +143,21 @@ export default function OnboardWizard() {
         </div>
 
         <div className="flex gap-3">
-          <button
+          <Button
+            size="lg"
             onClick={handleExtract}
             disabled={!file}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex-1"
           >
-            Extract Profile with Gemini <ArrowRight className="w-4 h-4" />
-          </button>
-          <button
+            Extract Profile with Gemini <ArrowRight />
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
             onClick={handleUseDemoFile}
-            className="px-4 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50 transition-colors"
           >
             Use Demo Deck
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -157,27 +165,29 @@ export default function OnboardWizard() {
 
   if (step === "extracting") {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
-        <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-          <Bot className="w-8 h-8 text-emerald-600" />
-        </div>
-        <h3 className="font-semibold text-gray-900 mb-1">Extracting company profile…</h3>
-        <p className="text-sm text-gray-500">Gemini 2.5 Pro is reading the pitch deck</p>
-        <div className="mt-6 flex items-center justify-center gap-2">
-          <div className="flex gap-1">
-            {[0, 1, 2].map(i => (
-              <div key={i} className={`w-2 h-2 rounded-full bg-emerald-400 animate-bounce`} style={{ animationDelay: `${i * 0.15}s` }} />
-            ))}
+      <Card>
+        <CardContent className="p-12 text-center">
+          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Bot className="w-8 h-8 text-emerald-600" />
           </div>
-        </div>
-        <div className="mt-5 text-left bg-gray-50 rounded-lg p-4 font-mono text-xs text-gray-400 space-y-1">
-          <p>▸ Parsing pitch deck structure…</p>
-          <p>▸ Identifying company overview slide…</p>
-          <p>▸ Extracting sector, stage, founding year…</p>
-          <p>▸ Locating CEO LinkedIn URL…</p>
-          <p className="animate-pulse">▸ Generating structured JSON profile…</p>
-        </div>
-      </div>
+          <h3 className="font-semibold text-gray-900 mb-1">Extracting company profile…</h3>
+          <p className="text-sm text-gray-500">Gemini 2.5 Pro is reading the pitch deck</p>
+          <div className="mt-6 flex items-center justify-center gap-2">
+            <div className="flex gap-1">
+              {[0, 1, 2].map(i => (
+                <div key={i} className={`w-2 h-2 rounded-full bg-emerald-400 animate-bounce`} style={{ animationDelay: `${i * 0.15}s` }} />
+              ))}
+            </div>
+          </div>
+          <div className="mt-5 text-left bg-gray-50 rounded-lg p-4 font-mono text-xs text-gray-400 space-y-1">
+            <p>▸ Parsing pitch deck structure…</p>
+            <p>▸ Identifying company overview slide…</p>
+            <p>▸ Extracting sector, stage, founding year…</p>
+            <p>▸ Locating CEO LinkedIn URL…</p>
+            <p className="animate-pulse">▸ Generating structured JSON profile…</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -205,86 +215,96 @@ export default function OnboardWizard() {
         </div>
 
         {/* Form */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-          <h3 className="font-semibold text-gray-900 text-sm">Company Profile <span className="text-gray-400 font-normal">(edit before saving)</span></h3>
-
-          <div className="grid grid-cols-2 gap-4">
-            {field("name", "Company Name")}
-            {field("sector", "Sector")}
-            {field("stage", "Stage")}
-            {field("founded_year", "Founded Year")}
-            {field("ceo_name", "CEO Name")}
-            {field("ceo_linkedin_url", "CEO LinkedIn URL")}
-          </div>
-          {field("funding_rationale", "Investment Rationale (from deck)", true)}
-
-          {/* Needs */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">What They Need</label>
-            <div className="flex flex-wrap gap-2">
-              {(editedCompany.needs ?? []).map((need, i) => (
-                <div key={i} className="flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1">
-                  <span className="text-sm text-gray-700">{need}</span>
-                  <button
-                    onClick={() => setEditedCompany(prev => ({ ...prev, needs: (prev.needs ?? []).filter((_, j) => j !== i) }))}
-                    className="text-gray-400 hover:text-red-500 ml-1"
-                  ><X className="w-3 h-3" /></button>
-                </div>
-              ))}
-              <button
-                onClick={() => {
-                  const v = prompt("Add a need:");
-                  if (v) setEditedCompany(prev => ({ ...prev, needs: [...(prev.needs ?? []), v] }));
-                }}
-                className="inline-flex items-center gap-1 text-xs text-emerald-600 border border-emerald-200 rounded-full px-3 py-1 hover:bg-emerald-50"
-              ><Plus className="w-3 h-3" /> Add</button>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Company Profile <span className="text-gray-400 font-normal">(edit before saving)</span></CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              {field("name", "Company Name")}
+              {field("sector", "Sector")}
+              {field("stage", "Stage")}
+              {field("founded_year", "Founded Year")}
+              {field("ceo_name", "CEO Name")}
+              {field("ceo_linkedin_url", "CEO LinkedIn URL")}
             </div>
-          </div>
-        </div>
+            {field("funding_rationale", "Investment Rationale (from deck)", true)}
 
-        {/* CEO LinkedIn enrichment */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <div className="flex items-center justify-between">
+            {/* Needs */}
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm">CEO LinkedIn Enrichment</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Apify scraper · pulls headline, education, past roles</p>
-            </div>
-            <button
-              onClick={handleEnrich}
-              disabled={enriching}
-              className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors flex items-center gap-2"
-            >
-              {enriching ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Enriching…
-                </>
-              ) : (
-                <>
-                  Enrich via Apify <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </div>
-
-          {company.ceo_profile && (
-            <div className="mt-4 bg-gray-50 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-medium text-gray-900">{company.ceo_profile.headline}</p>
-              <p className="flex items-center gap-1 text-xs text-gray-600"><MapPin className="w-3 h-3 shrink-0" /> {company.ceo_profile.current_role}</p>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {company.ceo_profile.past_roles.map(r => (
-                  <span key={r} className="text-xs bg-white border border-gray-200 rounded-full px-2.5 py-1 text-gray-600">{r}</span>
+              <Label className="mb-1 text-xs text-gray-600">What They Need</Label>
+              <div className="flex flex-wrap items-center gap-2">
+                {(editedCompany.needs ?? []).map((need, i) => (
+                  <Badge key={i} variant="secondary" className="gap-1 pr-1">
+                    <span>{need}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => setEditedCompany(prev => ({ ...prev, needs: (prev.needs ?? []).filter((_, j) => j !== i) }))}
+                      className="text-gray-400 hover:text-red-500"
+                    ><X /></Button>
+                  </Badge>
                 ))}
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={() => {
+                    const v = prompt("Add a need:");
+                    if (v) setEditedCompany(prev => ({ ...prev, needs: [...(prev.needs ?? []), v] }));
+                  }}
+                  className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                ><Plus /> Add</Button>
               </div>
             </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
 
-        <button
+        {/* CEO LinkedIn enrichment */}
+        <Card>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-gray-900 text-sm">CEO LinkedIn Enrichment</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Apify scraper · pulls headline, education, past roles</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={handleEnrich}
+                disabled={enriching}
+              >
+                {enriching ? (
+                  <>
+                    <Loader2 className="animate-spin" /> Enriching…
+                  </>
+                ) : (
+                  <>
+                    Enrich via Apify <ArrowRight />
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {company.ceo_profile && (
+              <div className="mt-4 bg-gray-50 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-medium text-gray-900">{company.ceo_profile.headline}</p>
+                <p className="flex items-center gap-1 text-xs text-gray-600"><MapPin className="w-3 h-3 shrink-0" /> {company.ceo_profile.current_role}</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {company.ceo_profile.past_roles.map(r => (
+                    <Badge key={r} variant="secondary">{r}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Button
+          size="lg"
           onClick={handleSaveAndMatch}
-          className="w-full flex items-center justify-center gap-2 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors"
+          className="w-full"
         >
-          Save Profile &amp; Find Matches <ArrowRight className="w-4 h-4" />
-        </button>
+          Save Profile &amp; Find Matches <ArrowRight />
+        </Button>
       </div>
     );
   }

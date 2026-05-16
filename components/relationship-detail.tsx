@@ -4,6 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeftRight, ArrowRight, Calendar, Check, ChevronRight, Loader2 } from "lucide-react";
 import type { Company, EmailDraft, Milestone, MatchRationale, Relationship } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 const milestoneColors: Record<string, { bg: string; dot: string; label: string }> = {
   pending: { bg: "bg-gray-50 border-gray-200", dot: "bg-gray-300", label: "Pending" },
@@ -99,7 +111,7 @@ export default function RelationshipDetail({
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-8 max-w-7xl mx-auto">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
         <Link href="/dashboard" className="hover:text-gray-600">Dashboard</Link>
@@ -118,9 +130,9 @@ export default function RelationshipDetail({
               <ArrowLeftRight className="w-5 h-5 text-gray-400 shrink-0" />
               {targetName}
             </h1>
-            <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${stateColor[relationship.state]}`}>
+            <Badge variant="secondary" className={cn("capitalize", stateColor[relationship.state])}>
               {relationship.state}
-            </span>
+            </Badge>
           </div>
           <p className="text-sm text-gray-500">{targetHeadline}</p>
           <p className="text-xs text-gray-400 mt-1 capitalize">
@@ -130,22 +142,18 @@ export default function RelationshipDetail({
         </div>
 
         {!activated && (
-          <button
-            onClick={activate}
-            disabled={activating}
-            className="px-5 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-          >
+          <Button size="lg" onClick={activate} disabled={activating}>
             {activating ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="animate-spin" />
                 Activating…
               </>
             ) : (
               <>
-                Activate Relationship <ArrowRight className="w-4 h-4" />
+                Activate Relationship <ArrowRight />
               </>
             )}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -154,147 +162,158 @@ export default function RelationshipDetail({
         <div className="col-span-2 space-y-6">
           {/* Match rationale */}
           {relationship.rationale && (
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h2 className="font-semibold text-gray-900 text-sm mb-4">Match Rationale</h2>
-              <div className="grid grid-cols-2 gap-5">
-                {(Object.entries(relationship.rationale) as [keyof MatchRationale, { score: number; reason: string }][]).map(
-                  ([dim, val]) => (
-                    <div key={dim}>
-                      <p className="text-xs font-semibold text-gray-700 mb-1.5">{dimensionLabels[dim]}</p>
-                      <ScoreCell score={val.score} reason={val.reason} />
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Match Rationale</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-5">
+                  {(Object.entries(relationship.rationale) as [keyof MatchRationale, { score: number; reason: string }][]).map(
+                    ([dim, val]) => (
+                      <div key={dim}>
+                        <p className="text-xs font-semibold text-gray-700 mb-1.5">{dimensionLabels[dim]}</p>
+                        <ScoreCell score={val.score} reason={val.reason} />
+                      </div>
+                    )
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Milestones */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-900 text-sm">Milestones</h2>
-              {!activated && !activating && (
-                <p className="text-xs text-gray-400">Activate the relationship to generate AI milestones</p>
-              )}
-              {activating && <p className="text-xs text-emerald-600 animate-pulse">MilestoneDrafter agent running…</p>}
-            </div>
-
-            {milestones.length === 0 ? (
-              <div className="text-center py-8 text-gray-400 text-sm">
-                No milestones yet. Activate the relationship to generate milestones.
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Milestones</CardTitle>
+                {!activated && !activating && (
+                  <p className="text-xs text-gray-400">Activate the relationship to generate AI milestones</p>
+                )}
+                {activating && <p className="text-xs text-emerald-600 animate-pulse">MilestoneDrafter agent running…</p>}
               </div>
-            ) : (
-              <div className="space-y-3">
-                {milestones.map(m => {
-                  const colors = milestoneColors[m.status];
-                  return (
-                    <div key={m.id} className={`border rounded-xl p-4 ${colors.bg}`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-2.5">
-                          <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${colors.dot}`} />
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">{m.title}</p>
-                            <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{m.description}</p>
-                            <div className="flex items-center gap-3 mt-2">
-                              <span className="flex items-center gap-1 text-xs text-gray-400"><Calendar className="w-3 h-3 shrink-0" /> {m.target_date}</span>
-                              <span className="text-xs text-gray-400">{m.quarter}</span>
-                              {m.source === "ai_drafted" && (
-                                <span className="text-xs text-gray-400 bg-white border border-gray-200 rounded-full px-2 py-0.5">AI drafted</span>
-                              )}
+            </CardHeader>
+            <CardContent>
+              {milestones.length === 0 ? (
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  No milestones yet. Activate the relationship to generate milestones.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {milestones.map(m => {
+                    const colors = milestoneColors[m.status];
+                    return (
+                      <div key={m.id} className={`border rounded-xl p-4 ${colors.bg}`}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-2.5">
+                            <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${colors.dot}`} />
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">{m.title}</p>
+                              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{m.description}</p>
+                              <div className="flex items-center gap-3 mt-2">
+                                <span className="flex items-center gap-1 text-xs text-gray-400"><Calendar className="w-3 h-3 shrink-0" /> {m.target_date}</span>
+                                <Badge variant="outline" className="text-gray-400">{m.quarter}</Badge>
+                                {m.source === "ai_drafted" && (
+                                  <Badge variant="outline" className="bg-white text-gray-400">AI drafted</Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
+                          <Select value={m.status} onValueChange={(v) => updateMilestoneStatus(m.id, v as Milestone["status"])}>
+                            <SelectTrigger className="shrink-0 bg-white text-gray-600" size="sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="on_track">On Track</SelectItem>
+                              <SelectItem value="at_risk">At Risk</SelectItem>
+                              <SelectItem value="achieved">Achieved</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <select
-                          value={m.status}
-                          onChange={e => updateMilestoneStatus(m.id, e.target.value as Milestone["status"])}
-                          className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 shrink-0"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="on_track">On Track</option>
-                          <option value="at_risk">At Risk</option>
-                          <option value="achieved">Achieved</option>
-                        </select>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right: Email draft */}
         <div className="space-y-6">
           {/* Company summary */}
           {company && (
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <h2 className="font-semibold text-gray-900 text-sm mb-3">Company</h2>
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-xs font-bold">{company.name[0]}</div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{company.name}</p>
-                    <p className="text-xs text-gray-500">{company.sector} · {company.stage}</p>
+            <Card>
+              <CardHeader>
+                <CardTitle>Company</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-xs font-bold">{company.name[0]}</div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{company.name}</p>
+                      <p className="text-xs text-gray-500">{company.sector} · {company.stage}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {company.needs.slice(0, 3).map(n => (
+                      <Badge key={n} variant="secondary" className="bg-gray-100 text-gray-600">{n}</Badge>
+                    ))}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {company.needs.slice(0, 3).map(n => (
-                    <span key={n} className="text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{n}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Email draft */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-gray-900 text-sm">Intro Email Draft</h2>
-              {draft && (
-                <span className="text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-full px-2 py-0.5">EmailDrafter agent</span>
-              )}
-            </div>
-
-            {!draft && !activating && (
-              <p className="text-xs text-gray-400 text-center py-4">Email draft will be generated when you activate the relationship.</p>
-            )}
-            {activating && (
-              <p className="text-xs text-emerald-600 text-center py-4 animate-pulse">EmailDrafter writing intro email…</p>
-            )}
-
-            {draft && (
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs font-medium text-gray-600 mb-1">Subject</p>
-                  <p className="text-xs text-gray-700 bg-gray-50 rounded-lg px-3 py-2">{draft.subject}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600 mb-1">Body</p>
-                  <textarea
-                    className="w-full text-xs text-gray-700 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    rows={10}
-                    value={draftBody}
-                    onChange={e => setDraftBody(e.target.value)}
-                  />
-                </div>
-                <button
-                  onClick={saveDraft}
-                  disabled={savingDraft}
-                  className="w-full flex items-center justify-center gap-1 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  {savingDraft ? "Saving…" : draftSaved ? <><Check className="w-3.5 h-3.5" /> Saved</> : "Save Draft"}
-                </button>
-                {!draft.sent_at && (
-                  <button className="w-full flex items-center justify-center gap-2 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors">
-                    Mark as Sent <ArrowRight className="w-4 h-4" />
-                  </button>
-                )}
-                {draft.sent_at && (
-                  <p className="text-xs text-center text-gray-400">Sent {new Date(draft.sent_at).toLocaleDateString()}</p>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Intro Email Draft</CardTitle>
+                {draft && (
+                  <Badge variant="outline" className="bg-gray-50 text-gray-400">EmailDrafter agent</Badge>
                 )}
               </div>
-            )}
-          </div>
+            </CardHeader>
+            <CardContent>
+              {!draft && !activating && (
+                <p className="text-xs text-gray-400 text-center py-4">Email draft will be generated when you activate the relationship.</p>
+              )}
+              {activating && (
+                <p className="text-xs text-emerald-600 text-center py-4 animate-pulse">EmailDrafter writing intro email…</p>
+              )}
+
+              {draft && (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-1">Subject</p>
+                    <p className="text-xs text-gray-700 bg-gray-50 rounded-lg px-3 py-2">{draft.subject}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-1">Body</p>
+                    <Textarea
+                      className="text-xs text-gray-700 resize-none"
+                      rows={10}
+                      value={draftBody}
+                      onChange={e => setDraftBody(e.target.value)}
+                    />
+                  </div>
+                  <Button variant="outline" className="w-full" onClick={saveDraft} disabled={savingDraft}>
+                    {savingDraft ? "Saving…" : draftSaved ? <><Check /> Saved</> : "Save Draft"}
+                  </Button>
+                  {!draft.sent_at && (
+                    <Button className="w-full">
+                      Mark as Sent <ArrowRight />
+                    </Button>
+                  )}
+                  {draft.sent_at && (
+                    <p className="text-xs text-center text-gray-400">Sent {new Date(draft.sent_at).toLocaleDateString()}</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

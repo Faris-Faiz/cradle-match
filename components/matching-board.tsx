@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, ChevronDown, ChevronUp, ClipboardList, Handshake, Loader2, Search, Users } from "lucide-react";
 import type { CandidatesResult, MatchCandidate, MatchRationale } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface TargetInfo {
   name: string;
@@ -49,69 +53,69 @@ function CandidateCard({
   const totalScore = Math.round(candidate.score * 100);
 
   return (
-    <div className={`bg-white border rounded-xl p-5 transition-all ${approved ? "border-emerald-300 ring-1 ring-emerald-200" : "border-gray-200"}`}>
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-gray-900 text-white flex items-center justify-center text-sm font-bold shrink-0">
-            {info.name[0]}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 leading-tight">{info.name}</p>
-            <p className="text-xs text-gray-500 leading-tight mt-0.5 line-clamp-2">{info.subtitle}</p>
-          </div>
-        </div>
-        <div className="shrink-0 text-right">
-          <div className={`text-sm font-bold ${totalScore >= 80 ? "text-emerald-600" : "text-amber-600"}`}>{totalScore}%</div>
-          <div className="text-xs text-gray-400">match</div>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-1 mb-3">
-        {info.tags.slice(0, 3).map(t => (
-          <span key={t} className="text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{t}</span>
-        ))}
-      </div>
-
-      <div className="space-y-1.5 mb-3">
-        {(Object.entries(candidate.rationale) as [keyof MatchRationale, { score: number; reason: string }][]).map(([dim, val]) => (
-          <ScoreBar key={dim} score={val.score} label={dimensionLabels[dim]} />
-        ))}
-      </div>
-
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors mb-3"
-      >
-        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        {expanded ? "Hide rationale" : "Show rationale"}
-      </button>
-
-      {expanded && (
-        <div className="mb-3 space-y-2 bg-gray-50 rounded-lg p-3">
-          {(Object.entries(candidate.rationale) as [keyof MatchRationale, { score: number; reason: string }][]).map(([dim, val]) => (
-            <div key={dim}>
-              <p className="text-xs font-semibold text-gray-700">{dimensionLabels[dim]}</p>
-              <p className="text-xs text-gray-500 leading-relaxed">{val.reason}</p>
+    <Card className={cn("transition-all", approved && "ring-emerald-300")}>
+      <CardContent>
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-gray-900 text-white flex items-center justify-center text-sm font-bold shrink-0">
+              {info.name[0]}
             </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 leading-tight">{info.name}</p>
+              <p className="text-xs text-gray-500 leading-tight mt-0.5 line-clamp-2">{info.subtitle}</p>
+            </div>
+          </div>
+          <div className="shrink-0 text-right">
+            <div className={`text-sm font-bold ${totalScore >= 80 ? "text-emerald-600" : "text-amber-600"}`}>{totalScore}%</div>
+            <div className="text-xs text-gray-400">match</div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-1 mb-3">
+          {info.tags.slice(0, 3).map(t => (
+            <Badge key={t} variant="secondary">{t}</Badge>
           ))}
         </div>
-      )}
 
-      {approved ? (
-        <div className="flex items-center gap-2 bg-emerald-50 rounded-lg px-3 py-2">
-          <Check className="w-4 h-4 text-emerald-600" />
-          <span className="text-sm text-emerald-700 font-medium">Approved</span>
+        <div className="space-y-1.5 mb-3">
+          {(Object.entries(candidate.rationale) as [keyof MatchRationale, { score: number; reason: string }][]).map(([dim, val]) => (
+            <ScoreBar key={dim} score={val.score} label={dimensionLabels[dim]} />
+          ))}
         </div>
-      ) : (
-        <button
-          onClick={onApprove}
-          disabled={approving}
-          className="w-full flex items-center justify-center gap-2 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors"
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setExpanded(!expanded)}
+          className="mb-3 text-gray-400 hover:text-gray-600"
         >
-          {approving ? "Approving…" : <>Approve <ArrowRight className="w-4 h-4" /></>}
-        </button>
-      )}
-    </div>
+          {expanded ? <ChevronUp /> : <ChevronDown />}
+          {expanded ? "Hide rationale" : "Show rationale"}
+        </Button>
+
+        {expanded && (
+          <div className="mb-3 space-y-2 bg-gray-50 rounded-lg p-3">
+            {(Object.entries(candidate.rationale) as [keyof MatchRationale, { score: number; reason: string }][]).map(([dim, val]) => (
+              <div key={dim}>
+                <p className="text-xs font-semibold text-gray-700">{dimensionLabels[dim]}</p>
+                <p className="text-xs text-gray-500 leading-relaxed">{val.reason}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {approved ? (
+          <div className="flex items-center gap-2 bg-emerald-50 rounded-lg px-3 py-2">
+            <Check className="w-4 h-4 text-emerald-600" />
+            <span className="text-sm text-emerald-700 font-medium">Approved</span>
+          </div>
+        ) : (
+          <Button onClick={onApprove} disabled={approving} className="w-full">
+            {approving ? "Approving…" : <>Approve <ArrowRight /></>}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -173,54 +177,55 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
 
   if (!running && !result) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-12 text-center max-w-2xl mx-auto">
-        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Search className="w-8 h-8 text-gray-400" />
-        </div>
-        <h3 className="font-semibold text-gray-900 mb-2">Ready to run matching</h3>
-        <p className="text-sm text-gray-500 mb-6">
-          The MatchingOrchestrator ADK agent will spin up 3 sub-agents in parallel — MentorMatcher, ProgrammeMatcher, and PartnerMatcher — each using Gemini 2.5 Pro to rank and score candidates.
-        </p>
-        <div className="flex items-center justify-center gap-6 text-xs text-gray-400 mb-8">
-          {["MentorMatcher", "ProgrammeMatcher", "PartnerMatcher"].map(a => (
-            <div key={a} className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-gray-300" />
-              {a}
-            </div>
-          ))}
-        </div>
-        <button
-          onClick={runMatch}
-          className="inline-flex items-center gap-2 px-8 py-3 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors"
-        >
-          Run Matching Agents <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-12 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Search className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-2">Ready to run matching</h3>
+          <p className="text-sm text-gray-500 mb-6">
+            The MatchingOrchestrator ADK agent will spin up 3 sub-agents in parallel — MentorMatcher, ProgrammeMatcher, and PartnerMatcher — each using Gemini 2.5 Pro to rank and score candidates.
+          </p>
+          <div className="flex items-center justify-center gap-6 text-xs text-gray-400 mb-8">
+            {["MentorMatcher", "ProgrammeMatcher", "PartnerMatcher"].map(a => (
+              <div key={a} className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-gray-300" />
+                {a}
+              </div>
+            ))}
+          </div>
+          <Button size="lg" onClick={runMatch}>
+            Run Matching Agents <ArrowRight />
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   if (running) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-12 text-center max-w-2xl mx-auto">
-        <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
-        </div>
-        <h3 className="font-semibold text-gray-900 mb-1">ADK agents running…</h3>
-        <p className="text-sm text-gray-500 mb-6">MentorMatcher · ProgrammeMatcher · PartnerMatcher running in parallel</p>
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-12 text-center">
+          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-1">ADK agents running…</h3>
+          <p className="text-sm text-gray-500 mb-6">MentorMatcher · ProgrammeMatcher · PartnerMatcher running in parallel</p>
 
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-4">
-          <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
-        </div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-4">
+            <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+          </div>
 
-        <div className="space-y-2 text-left bg-gray-50 rounded-lg p-4 font-mono text-xs text-gray-400">
-          <p className={progress > 0 ? "text-emerald-600" : ""}>▸ MatchingOrchestrator initialised</p>
-          <p className={progress > 20 ? "text-emerald-600" : ""}>▸ Fetching {companyName} profile from Firestore</p>
-          <p className={progress > 35 ? "text-emerald-600" : ""}>▸ MentorMatcher: ranking 15 mentor profiles…</p>
-          <p className={progress > 50 ? "text-emerald-600" : ""}>▸ ProgrammeMatcher: evaluating 3 tracks…</p>
-          <p className={progress > 65 ? "text-emerald-600" : ""}>▸ PartnerMatcher: scoring 10 ecosystem partners…</p>
-          <p className={progress > 80 ? "text-emerald-600" : "animate-pulse"}>▸ Collating results into unified review…</p>
-        </div>
-      </div>
+          <div className="space-y-2 text-left bg-gray-50 rounded-lg p-4 font-mono text-xs text-gray-400">
+            <p className={progress > 0 ? "text-emerald-600" : ""}>▸ MatchingOrchestrator initialised</p>
+            <p className={progress > 20 ? "text-emerald-600" : ""}>▸ Fetching {companyName} profile from Firestore</p>
+            <p className={progress > 35 ? "text-emerald-600" : ""}>▸ MentorMatcher: ranking 15 mentor profiles…</p>
+            <p className={progress > 50 ? "text-emerald-600" : ""}>▸ ProgrammeMatcher: evaluating 3 tracks…</p>
+            <p className={progress > 65 ? "text-emerald-600" : ""}>▸ PartnerMatcher: scoring 10 ecosystem partners…</p>
+            <p className={progress > 80 ? "text-emerald-600" : "animate-pulse"}>▸ Collating results into unified review…</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -240,12 +245,9 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
           Results ready · {new Date(result!.generated_at).toLocaleTimeString()} · Select candidates to approve
         </p>
         {anyApproved && (
-          <button
-            onClick={activateApproved}
-            className="inline-flex items-center gap-2 px-5 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
-          >
-            Activate Approved ({Object.keys(approved).length}) <ArrowRight className="w-4 h-4" />
-          </button>
+          <Button size="lg" onClick={activateApproved}>
+            Activate Approved ({Object.keys(approved).length}) <ArrowRight />
+          </Button>
         )}
       </div>
 
@@ -255,7 +257,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
             <div className="flex items-center gap-2 mb-3">
               <col.icon className="w-4 h-4 text-gray-500" />
               <h3 className="font-semibold text-gray-800 text-sm">{col.label}</h3>
-              <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">{col.candidates.length}</span>
+              <Badge variant="secondary">{col.candidates.length}</Badge>
             </div>
             <div className="space-y-4">
               {col.candidates.map(c => (

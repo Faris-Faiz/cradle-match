@@ -25,6 +25,7 @@ There are no automated tests.
 - **Vertex AI / Gemini 2.5 Pro** — pitch deck extraction and candidate ranking
 - **Apify** — LinkedIn profile scraping
 - **lucide-react** — the single source for all UI icons
+- **shadcn/ui** — component layer in [components/ui/](components/ui/) (`base-nova` style, built on Base UI primitives)
 
 ## Architecture
 
@@ -143,6 +144,30 @@ The codebase favours **sparse, high-signal comments**. Code is expected to be se
 - Size icons with Tailwind classes (`className="w-4 h-4"`) and let them inherit colour via `currentColor` (the default); only set a colour class when the icon must differ from its surrounding text.
 - When an icon sits next to text inside a button or link, give the element `flex`/`inline-flex items-center gap-*` so the two align.
 - Emoji and symbols remain acceptable inside plain-text string content that is *not* rendered as an icon (e.g. the body of a generated email).
+
+### UI components (shadcn/ui)
+
+The UI is built from **shadcn/ui** components in [components/ui/](components/ui/). This project uses the `base-nova` style — components are built on **Base UI** (`@base-ui/react`), not Radix. Config lives in `components.json`.
+
+- Add a component with `npx shadcn@latest add <name>` — never hand-write one. Files in `components/ui/` are generated; treat them as vendored and avoid editing them by hand.
+- **Never** style a raw element when a shadcn primitive exists:
+  - Buttons / CTAs → `<Button>` (`@/components/ui/button`). Variants: `default` (emerald primary), `outline`, `secondary`, `ghost`, `link`. Sizes: `sm`, `default`, `lg`.
+  - A link styled as a button → apply `buttonVariants({ variant })` to the Next `<Link>` (`import { buttonVariants } from "@/components/ui/button"`). Plain inline text links (breadcrumbs, "View →") stay a normal `<Link>`.
+  - Panels / cards → `<Card>` + `<CardHeader>`/`<CardTitle>`/`<CardContent>`/`<CardFooter>`. Card supplies its own padding — do not add `p-*`.
+  - Status pills / tags → `<Badge>` (`default` | `secondary` | `outline` | `destructive`).
+  - Form fields → `<Input>`, `<Textarea>`, `<Label>`.
+  - Dropdowns → `<Select>` with `SelectTrigger`/`SelectValue`/`SelectContent`/`SelectItem` (Base UI `Select.Root` takes `value` + `onValueChange`).
+- Place lucide icons as children of `<Button>`/`<Badge>` — they auto-size; don't add manual `w-4 h-4` or `flex items-center gap-2`.
+- Merge conditional classes with `cn()` from [lib/utils.ts](lib/utils.ts).
+- The brand colour is the `--primary` theme token (emerald) in [app/globals.css](app/globals.css). Prefer the `<Button>` `default` variant and `bg-primary`/`text-primary` over hard-coded `bg-emerald-600`. Incidental emerald/amber/gray utility classes for backgrounds and status colours are fine.
+
+### Spacing & layout
+
+[app/dashboard/page.tsx](app/dashboard/page.tsx) is the layout reference — keep spacing consistent across every page:
+
+- Page container: `p-8 max-w-7xl mx-auto`.
+- Page header block: `mb-8`.
+- Stacked sections: `space-y-6`. Grids: `gap-4` or `gap-6`.
 
 ## Environment
 
