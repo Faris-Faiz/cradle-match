@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { pushSnackbar } from "@/components/ui/snackbar";
 import { cn } from "@/lib/utils";
 
 interface TargetInfo {
@@ -207,9 +208,13 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
       setProgress(100);
       setTargetInfo(info);
       setResult(data as CandidatesResult);
+      const total = data.mentors.length + data.programmes.length + data.partners.length;
+      pushSnackbar("success", "Matching complete", `${total} candidates ranked across mentors, programmes and partners.`);
     } catch (e) {
       await minDuration;
-      setError(e instanceof Error ? e.message : "Something went wrong while matching.");
+      const message = e instanceof Error ? e.message : "Something went wrong while matching.";
+      setError(message);
+      pushSnackbar("error", "Matching scan failed", message);
     } finally {
       clearInterval(timer);
       setRunning(false);
@@ -218,25 +223,37 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
 
   const approve = async (candidate: MatchCandidate) => {
     setApproving(candidate.target_id);
-    const res = await fetch("/api/relationships", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        company_id: companyId,
-        target_type: candidate.target_type,
-        target_id: candidate.target_id,
-        rationale: candidate.rationale,
-        score: candidate.score,
-      }),
-    });
-    const rel = await res.json();
-    setApproved(prev => ({ ...prev, [candidate.target_id]: rel.id }));
-    setApproving(null);
+    try {
+      const res = await fetch("/api/relationships", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_id: companyId,
+          target_type: candidate.target_type,
+          target_id: candidate.target_id,
+          rationale: candidate.rationale,
+          score: candidate.score,
+        }),
+      });
+      if (!res.ok) throw new Error(`Approval request failed (${res.status})`);
+      const rel = await res.json();
+      setApproved(prev => ({ ...prev, [candidate.target_id]: rel.id }));
+      const name = targetInfo[candidate.target_id]?.name ?? candidate.target_id;
+      pushSnackbar("success", "Candidate approved", `${name} added as a proposed ${candidate.target_type}.`);
+    } catch (e) {
+      pushSnackbar("error", "Approval failed", e instanceof Error ? e.message : "Could not approve this candidate.");
+    } finally {
+      setApproving(null);
+    }
   };
 
   const activateApproved = () => {
     const mentorRel = result?.mentors.map(m => approved[m.target_id]).find(Boolean);
-    if (mentorRel) router.push(`/relationships/${mentorRel}`);
+    if (mentorRel) {
+      router.push(`/relationships/${mentorRel}`);
+    } else {
+      pushSnackbar("info", "No mentor to activate", "Approve a mentor candidate to open its relationship.");
+    }
   };
 
   if (!running && error) {
