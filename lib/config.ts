@@ -8,7 +8,7 @@ export const config = {
   // Set MOCK_DATA_STORE=false to read/write Firestore instead of the in-memory store
   mockDataStore: flag("MOCK_DATA_STORE"),
 
-  // Set MOCK_EXTRACTION=false to extract pitch deck profiles with Gemini 2.5 Pro
+  // Set MOCK_EXTRACTION=false to extract pitch deck profiles with Gemini
   mockExtraction: flag("MOCK_EXTRACTION"),
 
   // Set MOCK_ENRICHMENT=false to enrich CEO profiles via Apify LinkedIn scraper

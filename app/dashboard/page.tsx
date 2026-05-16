@@ -21,6 +21,10 @@ const milestoneStatusDot: Record<string, string> = {
   achieved: "bg-blue-400",
 };
 
+function getCurrentTimestamp() {
+  return Date.now();
+}
+
 export default async function DashboardPage() {
   const [companies, relationships, milestones] = await Promise.all([
     getCompanies(),
@@ -55,12 +59,14 @@ export default async function DashboardPage() {
     })
   );
 
+  const now = getCurrentTimestamp();
+
   const stats = {
     total_companies: companies.length,
     active_pairings: activeRels.length,
     milestones_at_risk: milestones.filter(m => m.status === "at_risk").length,
     milestones_due_soon: milestones.filter(m => {
-      const diff = (new Date(m.target_date).getTime() - Date.now()) / 86400000;
+      const diff = (new Date(m.target_date).getTime() - now) / 86400000;
       return diff >= 0 && diff <= 30 && m.status !== "achieved";
     }).length,
   };

@@ -147,7 +147,7 @@ export default function OnboardWizard() {
                 <Upload className="w-7 h-7 text-gray-400" />
               </div>
               <p className="text-sm font-medium text-gray-700">Drop pitch deck here</p>
-              <p className="text-xs text-gray-400 mt-1">PDF · Gemini 2.5 Pro will extract the company profile</p>
+              <p className="text-xs text-gray-400 mt-1">PDF · Gemini will extract the company profile</p>
             </div>
           )}
         </div>
@@ -197,7 +197,7 @@ export default function OnboardWizard() {
         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
           <Check className="w-4 h-4 text-emerald-600" />
           <span className="text-sm text-emerald-700 font-medium">Profile extracted from pitch deck</span>
-          <span className="text-xs text-emerald-500 ml-auto">Gemini 2.5 Pro · {new Date().toLocaleTimeString()}</span>
+          <span className="text-xs text-emerald-500 ml-auto">Gemini · {new Date().toLocaleTimeString()}</span>
         </div>
 
         {/* Form */}

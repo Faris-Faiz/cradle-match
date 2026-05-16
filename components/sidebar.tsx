@@ -39,7 +39,6 @@ export default function Sidebar() {
             Cradle Match
           </span>
         </div>
-
         <nav className="flex-1 py-4 space-y-0.5 px-3 overflow-y-auto overflow-x-hidden">
           {nav.map(({ href, label, icon: Icon }) => {
             const active = isNavActive(href, pathname);
