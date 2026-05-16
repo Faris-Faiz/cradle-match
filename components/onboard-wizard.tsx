@@ -305,10 +305,9 @@ export default function OnboardWizard() {
 
 function ExtractionLoader() {
   return (
-    <Card className="overflow-hidden">
+    <div className="ext-stage flex flex-col items-center rounded-xl p-12">
       <style>{EXTRACTION_STYLES}</style>
-      <CardContent className="ext-stage flex flex-col items-center p-12">
-        <div className="ext-loader-wrapper">
+      <div className="ext-loader-wrapper">
           <div className="ext-server-container">
             <div className="ext-server-disk"><div className="ext-server-light" /></div>
             <div className="ext-server-disk"><div className="ext-server-light" /></div>
@@ -339,28 +338,22 @@ function ExtractionLoader() {
           </div>
         </div>
 
-        <div className="ext-loading-container">
-          <div className="ext-loading-title">Extracting Company Profile</div>
-          <div className="ext-loading-subtitle">
-            Our extracting agent is reading the pitch deck<span className="ext-dots" />
-          </div>
-          <div className="ext-progress-track">
-            <div className="ext-progress-fill" />
-          </div>
+      <div className="ext-loading-container">
+        <div className="ext-loading-title">Extracting Company Profile</div>
+        <div className="ext-loading-subtitle">
+          Our extracting agent is reading the pitch deck<span className="ext-dots" />
         </div>
-      </CardContent>
-    </Card>
+        <div className="ext-progress-track">
+          <div className="ext-progress-fill" />
+        </div>
+      </div>
+    </div>
   );
 }
 
 const EXTRACTION_STYLES = `
 .ext-stage {
-  background-color: #f0fdf4;
-  background-image:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.8) 0%, rgba(241,245,249,1) 100%),
-    linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
-  background-size: 100% 100%, 20px 20px, 20px 20px;
+  background: transparent;
 }
 
 .ext-loader-wrapper {
@@ -437,7 +430,7 @@ const EXTRACTION_STYLES = `
   height: 0;
   border-style: solid;
   border-width: 0 17px 17px 0;
-  border-color: transparent #f0fdf4 transparent transparent;
+  border-color: transparent transparent transparent transparent;
 }
 
 .ext-document-container::after {
