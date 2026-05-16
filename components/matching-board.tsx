@@ -177,7 +177,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
         </div>
         <h3 className="font-semibold text-gray-900 mb-2">Ready to run matching</h3>
         <p className="text-sm text-gray-500 mb-6">
-          The MatchingOrchestrator ADK agent will spin up 3 sub-agents in parallel — MentorMatcher, ProgrammeMatcher, and PartnerMatcher — each using Gemini 2.5 Pro to rank and score candidates.
+          The MatchingOrchestrator ADK agent will spin up 3 sub-agents in parallel — MentorMatcher, ProgrammeMatcher, and PartnerMatcher — each using Gemini to rank and score candidates.
         </p>
         <div className="flex items-center justify-center gap-6 text-xs text-gray-400 mb-8">
           {["MentorMatcher", "ProgrammeMatcher", "PartnerMatcher"].map(a => (
