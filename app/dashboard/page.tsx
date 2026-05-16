@@ -215,7 +215,7 @@ export default async function DashboardPage() {
         ) : (
           <>
             {/* Column headers */}
-            <div className="hidden grid-cols-[1.4fr_1.4fr_1fr_auto] gap-6 border-b border-border px-5 py-2 md:grid">
+            <div className="hidden grid-cols-[1.4fr_1.4fr_1fr_9rem] gap-6 border-b border-border px-5 py-2 md:grid">
               <span className="section-label">Company</span>
               <span className="section-label">Working with</span>
               <span className="section-label">Milestone progress</span>
@@ -234,7 +234,7 @@ export default async function DashboardPage() {
                   <Link
                     key={relationship.id}
                     href={`/relationships/${relationship.id}`}
-                    className="grid grid-cols-1 gap-3 px-5 py-4 transition-colors hover:bg-muted md:grid-cols-[1.4fr_1.4fr_1fr_auto] md:items-center md:gap-6"
+                    className="grid grid-cols-1 gap-3 px-5 py-4 transition-colors hover:bg-muted md:grid-cols-[1.4fr_1.4fr_1fr_9rem] md:items-center md:gap-6"
                   >
                     <div className="flex items-center gap-2.5">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-foreground text-xs font-bold text-background">
