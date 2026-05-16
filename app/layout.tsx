@@ -3,6 +3,7 @@ import { Poppins, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppLayout from "@/components/app-layout";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SnackbarHost } from "@/components/ui/snackbar";
 
 // Poppins is the main UI typeface; exposed as --font-sans for Tailwind's font-sans
 const poppins = Poppins({
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TooltipProvider>
           <AppLayout>{children}</AppLayout>
         </TooltipProvider>
+        <SnackbarHost />
       </body>
     </html>
   );

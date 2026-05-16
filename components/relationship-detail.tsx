@@ -15,6 +15,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { pushSnackbar } from "@/components/ui/snackbar";
 import { cn } from "@/lib/utils";
 
 const milestoneColors: Record<string, { bg: string; dot: string; label: string }> = {
@@ -74,33 +75,58 @@ export default function RelationshipDetail({
 
   const activate = async () => {
     setActivating(true);
-    const res = await fetch(`/api/relationships/${relationship.id}/activate`, { method: "POST" });
-    const data = await res.json();
-    if (data.milestones) setMilestones(data.milestones);
-    if (data.draft) { setDraft(data.draft); setDraftBody(data.draft.body); }
-    setActivated(true);
-    setActivating(false);
+    try {
+      const res = await fetch(`/api/relationships/${relationship.id}/activate`, { method: "POST" });
+      if (!res.ok) throw new Error(`Activation request failed (${res.status})`);
+      const data = await res.json();
+      if (data.milestones) setMilestones(data.milestones);
+      if (data.draft) { setDraft(data.draft); setDraftBody(data.draft.body); }
+      setActivated(true);
+      const count = data.milestones?.length ?? 0;
+      pushSnackbar("success", "Relationship activated", `${count} milestones drafted${data.draft ? " and an intro email prepared" : ""}.`);
+    } catch (e) {
+      pushSnackbar("error", "Activation failed", e instanceof Error ? e.message : "Could not activate this relationship.");
+    } finally {
+      setActivating(false);
+    }
   };
 
   const saveDraft = async () => {
     setSavingDraft(true);
-    await fetch(`/api/relationships/${relationship.id}/draft`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body: draftBody }),
-    });
-    setSavingDraft(false);
-    setDraftSaved(true);
-    setTimeout(() => setDraftSaved(false), 2000);
+    try {
+      const res = await fetch(`/api/relationships/${relationship.id}/draft`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: draftBody }),
+      });
+      if (!res.ok) throw new Error(`Save request failed (${res.status})`);
+      setDraftSaved(true);
+      setTimeout(() => setDraftSaved(false), 2000);
+      pushSnackbar("success", "Draft saved", "Your changes to the intro email are stored.");
+    } catch (e) {
+      pushSnackbar("error", "Save failed", e instanceof Error ? e.message : "Could not save the email draft.");
+    } finally {
+      setSavingDraft(false);
+    }
   };
 
   const updateMilestoneStatus = async (milestoneId: string, status: Milestone["status"]) => {
-    await fetch(`/api/milestones/${milestoneId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
+    const previous = milestones;
     setMilestones(prev => prev.map(m => m.id === milestoneId ? { ...m, status } : m));
+    try {
+      const res = await fetch(`/api/milestones/${milestoneId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error(`Update request failed (${res.status})`);
+      const title = previous.find(m => m.id === milestoneId)?.title ?? "Milestone";
+      pushSnackbar("success", "Milestone updated", `${title} marked “${milestoneColors[status].label}”.`);
+    } catch (e) {
+      // Roll back the optimistic update so the UI matches the server.
+      setMilestones(previous);
+      pushSnackbar("error", "Update failed", e instanceof Error ? e.message : "Could not update the milestone.");
+    }
   };
 
   const stateColor: Record<string, string> = {

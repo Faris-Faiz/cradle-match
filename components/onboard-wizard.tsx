@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { pushSnackbar } from "@/components/ui/snackbar";
 
 type Step = "upload" | "extracting" | "review" | "enriching" | "done";
 
@@ -26,7 +27,10 @@ export default function OnboardWizard() {
   const [enriching, setEnriching] = useState(false);
 
   const handleFile = (f: File) => {
-    if (!f.name.endsWith(".pdf")) return;
+    if (!f.name.endsWith(".pdf")) {
+      pushSnackbar("warning", "Unsupported file", "Pitch decks must be uploaded as a PDF.");
+      return;
+    }
     setFile(f);
   };
 
@@ -42,50 +46,77 @@ export default function OnboardWizard() {
     setStep("extracting");
     const fd = new FormData();
     fd.append("pitch_deck", file);
-    // Hold the extraction animation 2s longer so it stays legible on fast responses.
-    const [res] = await Promise.all([
-      fetch("/api/companies", { method: "POST", body: fd }),
-      sleep(2000),
-    ]);
-    const data: Company = await res.json();
-    setCompany(data);
-    setEditedCompany(data);
-    setStep("review");
+    try {
+      // Hold the extraction animation 2s longer so it stays legible on fast responses.
+      const [res] = await Promise.all([
+        fetch("/api/companies", { method: "POST", body: fd }),
+        sleep(2000),
+      ]);
+      if (!res.ok) throw new Error(`Extraction request failed (${res.status})`);
+      const data: Company = await res.json();
+      setCompany(data);
+      setEditedCompany(data);
+      setStep("review");
+      pushSnackbar("success", "Profile extracted", `${data.name}'s profile is ready to review.`);
+    } catch (e) {
+      setStep("upload");
+      pushSnackbar("error", "Extraction failed", e instanceof Error ? e.message : "Could not read the pitch deck.");
+    }
   };
 
   const handleUseDemoFile = async () => {
     setStep("extracting");
     const fd = new FormData();
     fd.append("company_name", "TechVenture");
-    // Hold the extraction animation 2s longer so it stays legible on fast responses.
-    const [res] = await Promise.all([
-      fetch("/api/companies", { method: "POST", body: fd }),
-      sleep(2000),
-    ]);
-    const data: Company = await res.json();
-    setCompany(data);
-    setEditedCompany(data);
-    setStep("review");
+    try {
+      // Hold the extraction animation 2s longer so it stays legible on fast responses.
+      const [res] = await Promise.all([
+        fetch("/api/companies", { method: "POST", body: fd }),
+        sleep(2000),
+      ]);
+      if (!res.ok) throw new Error(`Extraction request failed (${res.status})`);
+      const data: Company = await res.json();
+      setCompany(data);
+      setEditedCompany(data);
+      setStep("review");
+      pushSnackbar("success", "Demo profile extracted", `${data.name}'s profile is ready to review.`);
+    } catch (e) {
+      setStep("upload");
+      pushSnackbar("error", "Extraction failed", e instanceof Error ? e.message : "Could not load the demo deck.");
+    }
   };
 
   const handleEnrich = async () => {
     if (!company) return;
     setEnriching(true);
-    const res = await fetch(`/api/companies/${company.id}/enrich`, { method: "POST" });
-    const updated: Company = await res.json();
-    setCompany(updated);
-    setEditedCompany(updated);
-    setEnriching(false);
+    try {
+      const res = await fetch(`/api/companies/${company.id}/enrich`, { method: "POST" });
+      if (!res.ok) throw new Error(`Enrichment request failed (${res.status})`);
+      const updated: Company = await res.json();
+      setCompany(updated);
+      setEditedCompany(updated);
+      pushSnackbar("success", "CEO profile enriched", `Pulled LinkedIn details for ${updated.ceo_name}.`);
+    } catch (e) {
+      pushSnackbar("error", "Enrichment failed", e instanceof Error ? e.message : "Could not reach LinkedIn.");
+    } finally {
+      setEnriching(false);
+    }
   };
 
   const handleSaveAndMatch = async () => {
     if (!company) return;
-    await fetch(`/api/companies/${company.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editedCompany),
-    });
-    router.push(`/companies/${company.id}/match`);
+    try {
+      const res = await fetch(`/api/companies/${company.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editedCompany),
+      });
+      if (!res.ok) throw new Error(`Save request failed (${res.status})`);
+      pushSnackbar("success", "Profile saved", "Finding mentor and programme matches…");
+      router.push(`/companies/${company.id}/match`);
+    } catch (e) {
+      pushSnackbar("error", "Save failed", e instanceof Error ? e.message : "Could not save the company profile.");
+    }
   };
 
   const field = (key: keyof Company, label: string, multiline = false) => (
@@ -191,13 +222,6 @@ export default function OnboardWizard() {
               {i < 2 && <ChevronRight className="w-4 h-4 text-gray-300 mx-1" />}
             </div>
           ))}
-        </div>
-
-        {/* Extracted badge */}
-        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
-          <Check className="w-4 h-4 text-emerald-600" />
-          <span className="text-sm text-emerald-700 font-medium">Profile extracted from pitch deck</span>
-          <span className="text-xs text-emerald-500 ml-auto">Extracting agent · {new Date().toLocaleTimeString()}</span>
         </div>
 
         {/* Form */}
