@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Check, ClipboardList, Handshake, HelpCircle, History, Radar, Search, Users } from "lucide-react";
+import { AlertTriangle, Check, ClipboardList, Crown, Handshake, HelpCircle, History, Radar, Search, Users } from "lucide-react";
 import type { CandidatesResult, EngagementSignal, MatchCandidate, MatchRationale } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -73,7 +73,7 @@ function ScoreBar({ score, label, reason }: { score: number; label: string; reas
 function TrackRecord({ signal }: { signal?: EngagementSignal }) {
   if (!signal) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-3">
+      <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2.5">
         <History className="w-3.5 h-3.5 shrink-0" />
         <span>No prior engagements — unproven match</span>
       </div>
@@ -86,7 +86,7 @@ function TrackRecord({ signal }: { signal?: EngagementSignal }) {
       ? "text-emerald-600"
       : "text-amber-600";
   return (
-    <div className={cn("flex items-start gap-1.5 text-xs mb-3", tone)}>
+    <div className={cn("flex items-start gap-1.5 text-xs mb-2.5", tone)}>
       <History className="w-3.5 h-3.5 shrink-0 mt-px" />
       <span className="leading-tight">{signal.summary}</span>
     </div>
@@ -99,19 +99,35 @@ function CandidateCard({
   onApprove,
   approved,
   approving,
+  isTop,
 }: {
   candidate: MatchCandidate;
   info: TargetInfo;
   onApprove: () => void;
   approved: boolean;
   approving: boolean;
+  isTop: boolean;
 }) {
   const totalScore = Math.round(candidate.score * 100);
 
   return (
-    <Card className={cn("h-full transition-all", approved && "ring-emerald-300")}>
+    <Card
+      className={cn(
+        "h-full transition-all",
+        isTop && "ring-2 ring-emerald-400",
+        approved && "ring-emerald-300",
+      )}
+    >
+      {/* Crowns the strongest candidate in the category so first-time users
+          know where to start. */}
+      {isTop && (
+        <div className="-mt-4 flex items-center gap-1.5 bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white">
+          <Crown className="w-3.5 h-3.5" />
+          Best Match
+        </div>
+      )}
       <CardContent className="flex flex-1 flex-col">
-        <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex items-start justify-between gap-2 mb-2.5">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg bg-gray-900 text-white flex items-center justify-center text-sm font-bold shrink-0">
               {info.name[0]}
@@ -127,13 +143,13 @@ function CandidateCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1 mb-3">
+        <div className="flex flex-wrap gap-1 mb-2.5">
           {info.tags.slice(0, 3).map(t => (
             <Badge key={t} variant="secondary">{t}</Badge>
           ))}
         </div>
 
-        <div className="space-y-1.5 mb-3">
+        <div className="space-y-1 mb-2.5">
           {(Object.entries(candidate.rationale) as [keyof MatchRationale, { score: number; reason: string }][]).map(([dim, val]) => (
             <ScoreBar key={dim} score={val.score} label={dimensionLabels[dim]} reason={val.reason} />
           ))}
@@ -408,7 +424,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
       <div className="flex items-center justify-between mb-6">
         <p className="flex items-center gap-1.5 text-sm text-gray-500">
           <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-          Results ready · {new Date(result!.generated_at).toLocaleTimeString()} · Select candidates to approve
+          Matches ready — pick the candidates you&apos;d like to approve. A crown marks the strongest match in each category.
         </p>
         {anyApproved && (
           <Button size="lg" onClick={activateApproved}>
@@ -418,27 +434,35 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
       </div>
 
       <div className="grid grid-cols-3 gap-6">
-        {columns.map(col => (
-          <div key={col.key}>
-            <div className="flex items-center gap-2 mb-3">
-              <col.icon className="w-4 h-4 text-gray-500" />
-              <h3 className="font-semibold text-gray-800 text-sm">{col.label}</h3>
-              <Badge variant="secondary">{col.candidates.length}</Badge>
+        {columns.map(col => {
+          // The highest-scoring candidate in the category gets the crown.
+          const topId = col.candidates.reduce<MatchCandidate | null>(
+            (best, c) => (c.score > (best?.score ?? -1) ? c : best),
+            null,
+          )?.target_id;
+          return (
+            <div key={col.key}>
+              <div className="flex items-center gap-2 mb-3">
+                <col.icon className="w-4 h-4 text-gray-500" />
+                <h3 className="font-semibold text-gray-800 text-sm">{col.label}</h3>
+                <Badge variant="secondary">{col.candidates.length}</Badge>
+              </div>
+              <div className="grid auto-rows-fr gap-4">
+                {col.candidates.map(c => (
+                  <CandidateCard
+                    key={c.target_id}
+                    candidate={c}
+                    info={targetInfo[c.target_id] ?? { name: c.target_id, subtitle: "", tags: [] }}
+                    onApprove={() => approve(c)}
+                    approved={!!approved[c.target_id]}
+                    approving={approving === c.target_id}
+                    isTop={c.target_id === topId}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="grid auto-rows-fr gap-4">
-              {col.candidates.map(c => (
-                <CandidateCard
-                  key={c.target_id}
-                  candidate={c}
-                  info={targetInfo[c.target_id] ?? { name: c.target_id, subtitle: "", tags: [] }}
-                  onApprove={() => approve(c)}
-                  approved={!!approved[c.target_id]}
-                  approving={approving === c.target_id}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

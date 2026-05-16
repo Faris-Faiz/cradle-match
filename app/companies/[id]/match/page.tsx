@@ -9,7 +9,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
+      <div className="">
         <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
           <Link href="/companies" className="hover:text-gray-600">Portfolio</Link>
           <span>→</span>
@@ -17,10 +17,10 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           <span>→</span>
           <span className="text-gray-900 font-medium">Find Matches</span>
         </div>
-        <h1 className="text-2xl font-semibold text-gray-900">Find Matches for {company?.name ?? "Startup"}</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-4">Find Matches for {company?.name ?? "Startup"}</h1>
+        {/* <p className="text-sm text-gray-500 mt-1">
           {company?.sector} · {company?.stage} · ADK MatchingOrchestrator running 3 sub-agents in parallel
-        </p>
+        </p> */}
       </div>
       <MatchingBoard companyId={id} companyName={company?.name ?? id} />
     </div>
