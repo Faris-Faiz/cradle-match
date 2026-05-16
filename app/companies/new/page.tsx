@@ -5,7 +5,7 @@ import OnboardingHint from "@/components/onboarding-hint";
 
 export default function NewCompanyPage() {
   return (
-    <div className="mx-auto max-w-3xl p-8">
+    <div className="p-8">
       <PageHeader
         icon={CirclePlus}
         title="Onboard a Startup"
