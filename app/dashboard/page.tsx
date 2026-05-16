@@ -1,26 +1,64 @@
 import Link from "next/link";
-import { ArrowRight, Plus } from "lucide-react";
-import { getCompanies, getRelationships, getMilestones, getMentor, getProgramme, getPartner } from "@/lib/services/data";
+import {
+  AlertTriangle,
+  Building2,
+  CalendarClock,
+  Handshake,
+  LayoutDashboard,
+  Network,
+  Plus,
+} from "lucide-react";
+import {
+  getCompanies,
+  getRelationships,
+  getMilestones,
+  getMentor,
+  getProgramme,
+  getPartner,
+} from "@/lib/services/data";
 import type { Milestone } from "@/lib/types";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import PageHeader from "@/components/page-header";
+import OnboardingHint from "@/components/onboarding-hint";
+import StatTile from "@/components/stat-tile";
+import EmptyState from "@/components/empty-state";
 import { cn } from "@/lib/utils";
 
-const statusColors: Record<string, string> = {
-  on_track: "bg-emerald-100 text-emerald-800",
-  at_risk: "bg-amber-100 text-amber-800",
-  pending: "bg-gray-100 text-gray-600",
-  achieved: "bg-blue-100 text-blue-800",
+// Plain-language health labels — what a manager sees, not the raw status code.
+const healthMeta: Record<string, { label: string; badge: string; dot: string }> = {
+  on_track: {
+    label: "On track",
+    badge: "bg-emerald-100 text-emerald-800",
+    dot: "bg-emerald-500",
+  },
+  at_risk: {
+    label: "Needs attention",
+    badge: "bg-amber-100 text-amber-800",
+    dot: "bg-amber-500",
+  },
+  pending: {
+    label: "Getting started",
+    badge: "bg-slate-100 text-slate-600",
+    dot: "bg-slate-300",
+  },
 };
 
-const milestoneStatusDot: Record<string, string> = {
+const milestoneDot: Record<string, string> = {
   on_track: "bg-emerald-400",
   at_risk: "bg-amber-400",
-  pending: "bg-gray-300",
+  pending: "bg-slate-300",
   achieved: "bg-blue-400",
 };
 
+const targetTypeLabel: Record<string, string> = {
+  mentor: "Mentor",
+  programme: "Programme",
+  partner: "Partner",
+};
+
+// Wrapped so the "deadlines soon" window is computed off a single timestamp.
 function getCurrentTimestamp() {
   return Date.now();
 }
@@ -32,12 +70,14 @@ export default async function DashboardPage() {
     getMilestones(),
   ]);
 
-  const activeRels = relationships.filter(r => r.state === "Active");
+  const activeRels = relationships.filter((r) => r.state === "Active");
 
   const pairings = await Promise.all(
-    activeRels.map(async rel => {
-      const company = companies.find(c => c.id === rel.company_id) ?? null;
-      const companyMilestones = milestones.filter(m => m.company_id === rel.company_id);
+    activeRels.map(async (rel) => {
+      const company = companies.find((c) => c.id === rel.company_id) ?? null;
+      const companyMilestones = milestones.filter(
+        (m) => m.company_id === rel.company_id,
+      );
 
       let target: { name: string; headline?: string } | null = null;
       if (rel.target_type === "mentor") {
@@ -51,116 +91,230 @@ export default async function DashboardPage() {
         target = p ? { name: p.org_name } : null;
       }
 
-      const atRisk = companyMilestones.filter(m => m.status === "at_risk").length;
-      const achieved = companyMilestones.filter(m => m.status === "achieved").length;
-      const health: "on_track" | "at_risk" | "pending" = atRisk > 0 ? "at_risk" : companyMilestones.length > 0 ? "on_track" : "pending";
+      const atRisk = companyMilestones.filter((m) => m.status === "at_risk").length;
+      const achieved = companyMilestones.filter((m) => m.status === "achieved").length;
+      const health: "on_track" | "at_risk" | "pending" =
+        atRisk > 0 ? "at_risk" : companyMilestones.length > 0 ? "on_track" : "pending";
 
-      return { relationship: rel, company, target, milestones: companyMilestones, health, milestone_summary: { total: companyMilestones.length, achieved, at_risk: atRisk } };
-    })
+      return {
+        relationship: rel,
+        company,
+        target,
+        milestones: companyMilestones,
+        health,
+        milestone_summary: {
+          total: companyMilestones.length,
+          achieved,
+          at_risk: atRisk,
+        },
+      };
+    }),
   );
 
   const now = getCurrentTimestamp();
-
   const stats = {
     total_companies: companies.length,
     active_pairings: activeRels.length,
-    milestones_at_risk: milestones.filter(m => m.status === "at_risk").length,
-    milestones_due_soon: milestones.filter(m => {
+    milestones_at_risk: milestones.filter((m) => m.status === "at_risk").length,
+    milestones_due_soon: milestones.filter((m) => {
       const diff = (new Date(m.target_date).getTime() - now) / 86400000;
       return diff >= 0 && diff <= 30 && m.status !== "achieved";
     }).length,
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Cohort Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">2026 Portfolio — Active Pairings & Milestone Health</p>
-        </div>
-        <Link href="/companies/new" className={buttonVariants({ size: "lg" })}>
-          <Plus /> Onboard Startup
-        </Link>
+    <div className="mx-auto max-w-7xl p-8">
+      <PageHeader
+        icon={LayoutDashboard}
+        title="Portfolio Overview"
+        description="A snapshot of every startup you manage and how their support relationships are progressing."
+        breadcrumb={[{ label: "Workspace" }, { label: "Overview" }]}
+        actions={
+          <>
+            <Link
+              href="/network"
+              className={buttonVariants({ variant: "outline", size: "lg" })}
+            >
+              <Network /> Relationship Map
+            </Link>
+            <Link
+              href="/companies/new"
+              className={buttonVariants({ size: "lg" })}
+            >
+              <Plus /> Onboard a Startup
+            </Link>
+          </>
+        }
+      />
+
+      <OnboardingHint id="dashboard" title="Welcome to your operations console">
+        Start here every day. The four tiles below summarise portfolio health;
+        the table lists every startup actively working with a mentor, programme,
+        or partner. Click any row to open its working relationship.
+      </OnboardingHint>
+
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatTile
+          label="Companies"
+          value={stats.total_companies}
+          icon={Building2}
+          hint="The total number of startups currently in your 2026 portfolio."
+        />
+        <StatTile
+          label="Active Pairings"
+          value={stats.active_pairings}
+          icon={Handshake}
+          tone="primary"
+          hint="A pairing is a startup that has been matched with, and is actively working alongside, a mentor, programme, or partner."
+        />
+        <StatTile
+          label="Deadlines Soon"
+          value={stats.milestones_due_soon}
+          icon={CalendarClock}
+          tone="info"
+          sublabel="Due within 30 days"
+          hint="Milestones (the goals set for each startup) with a target date in the next 30 days that haven't been completed yet."
+        />
+        <StatTile
+          label="At Risk"
+          value={stats.milestones_at_risk}
+          icon={AlertTriangle}
+          tone="warning"
+          sublabel="Milestones flagged"
+          hint="Milestones a programme manager has marked as at risk of missing their target — these need attention."
+        />
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-8">
-        {[
-          { label: "Portfolio Companies", value: stats.total_companies, color: "text-gray-900" },
-          { label: "Active Pairings", value: stats.active_pairings, color: "text-emerald-600" },
-          { label: "Milestones Due (30d)", value: stats.milestones_due_soon, color: "text-blue-600" },
-          { label: "At Risk", value: stats.milestones_at_risk, color: "text-amber-600" },
-        ].map(stat => (
-          <Card key={stat.label}>
-            <CardContent>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{stat.label}</p>
-              <p className={`text-3xl font-bold mt-1 ${stat.color}`}>{stat.value}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="py-0 gap-0 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800 text-sm">Active Pairings</h2>
+      <Card className="gap-0 py-0">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-foreground">
+              Active Pairings
+            </h2>
+            <Badge variant="secondary">{pairings.length}</Badge>
+          </div>
+          <Link
+            href="/companies"
+            className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            View all companies
+          </Link>
         </div>
-        <div className="divide-y divide-gray-100">
-          {pairings.length === 0 && (
-            <div className="px-6 py-10 text-center text-gray-400 text-sm">
-              No active pairings yet.{" "}
-              <Link href="/companies/new" className="text-emerald-600 hover:underline">Onboard your first startup</Link>
+
+        {pairings.length === 0 ? (
+          <EmptyState
+            icon={Handshake}
+            title="No active pairings yet"
+            description="Once you onboard a startup and approve a match, it will appear here so you can track its progress."
+            action={
+              <Link href="/companies/new" className={buttonVariants()}>
+                <Plus /> Onboard your first startup
+              </Link>
+            }
+          />
+        ) : (
+          <>
+            {/* Column headers */}
+            <div className="hidden grid-cols-[1.4fr_1.4fr_1fr_auto] gap-6 border-b border-border px-5 py-2 md:grid">
+              <span className="section-label">Company</span>
+              <span className="section-label">Working with</span>
+              <span className="section-label">Milestone progress</span>
+              <span className="section-label">Status</span>
             </div>
-          )}
-          {pairings.map(({ relationship, company, target, milestones: cms, health, milestone_summary }) => (
-            <div key={relationship.id} className="px-6 py-4 flex items-center gap-6 hover:bg-gray-50 transition-colors">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-xs font-bold shrink-0">
-                    {company?.name?.[0] ?? "?"}
-                  </div>
-                  <div>
-                    <Link href={`/companies/${company?.id}`} className="text-sm font-semibold text-gray-900 hover:text-emerald-700 transition-colors">
-                      {company?.name ?? "Unknown"}
-                    </Link>
-                    <p className="text-xs text-gray-500">{company?.sector} · {company?.stage}</p>
-                  </div>
-                </div>
-              </div>
+            <div className="divide-y divide-border">
+              {pairings.map(
+                ({
+                  relationship,
+                  company,
+                  target,
+                  milestones: cms,
+                  health,
+                  milestone_summary,
+                }) => (
+                  <Link
+                    key={relationship.id}
+                    href={`/relationships/${relationship.id}`}
+                    className="grid grid-cols-1 gap-3 px-5 py-4 transition-colors hover:bg-muted md:grid-cols-[1.4fr_1.4fr_1fr_auto] md:items-center md:gap-6"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-foreground text-xs font-bold text-background">
+                        {company?.name?.[0] ?? "?"}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {company?.name ?? "Unknown"}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {company?.sector} · {company?.stage}
+                        </p>
+                      </div>
+                    </div>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <Badge variant="secondary" className="capitalize">{relationship.target_type}</Badge>
-                  <span className="text-sm text-gray-700 truncate font-medium">{target?.name ?? "—"}</span>
-                </div>
-                {target?.headline && <p className="text-xs text-gray-400 truncate mt-0.5">{target.headline}</p>}
-              </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="secondary">
+                          {targetTypeLabel[relationship.target_type]}
+                        </Badge>
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {target?.name ?? "—"}
+                        </span>
+                      </div>
+                      {target?.headline && (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {target.headline}
+                        </p>
+                      )}
+                    </div>
 
-              <div className="w-48 shrink-0">
-                <div className="flex items-center gap-1 mb-1.5">
-                  {cms.slice(0, 4).map((m: Milestone) => (
-                    <div key={m.id} className={`h-2 flex-1 rounded-full ${milestoneStatusDot[m.status]}`} title={`${m.title} — ${m.status.replace("_", " ")}`} />
-                  ))}
-                  {cms.length === 0 && <span className="text-xs text-gray-400">No milestones</span>}
-                </div>
-                <p className="text-xs text-gray-400">
-                  {milestone_summary.achieved}/{milestone_summary.total} achieved
-                  {milestone_summary.at_risk > 0 && <span className="text-amber-600 ml-1">· {milestone_summary.at_risk} at risk</span>}
-                </p>
-              </div>
+                    <div className="min-w-0">
+                      <div className="mb-1.5 flex items-center gap-1">
+                        {cms.slice(0, 4).map((m: Milestone) => (
+                          <div
+                            key={m.id}
+                            className={cn(
+                              "h-1.5 flex-1 rounded-full",
+                              milestoneDot[m.status],
+                            )}
+                            title={`${m.title} — ${m.status.replace("_", " ")}`}
+                          />
+                        ))}
+                        {cms.length === 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            No milestones
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {milestone_summary.achieved} of {milestone_summary.total}{" "}
+                        done
+                        {milestone_summary.at_risk > 0 && (
+                          <span className="ml-1 text-amber-600">
+                            · {milestone_summary.at_risk} at risk
+                          </span>
+                        )}
+                      </p>
+                    </div>
 
-              <div className="w-24 shrink-0 flex justify-end">
-                <Badge variant="secondary" className={cn("capitalize", statusColors[health])}>
-                  {health.replace("_", " ")}
-                </Badge>
-              </div>
-
-              <div className="shrink-0">
-                <Link href={`/relationships/${relationship.id}`} className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 transition-colors font-medium">
-                  View <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={cn(
+                          "h-2 w-2 rounded-full",
+                          healthMeta[health].dot,
+                        )}
+                      />
+                      <Badge
+                        variant="secondary"
+                        className={healthMeta[health].badge}
+                      >
+                        {healthMeta[health].label}
+                      </Badge>
+                    </div>
+                  </Link>
+                ),
+              )}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </Card>
     </div>
   );

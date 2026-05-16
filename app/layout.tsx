@@ -14,14 +14,14 @@ const poppins = Poppins({
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Cradle Match — Portfolio Management",
-  description: "Mentor matching and cohort management for Cradle's startup programme",
+  title: "Cradle Match — Operations Console",
+  description: "Match, track, and manage startups, mentors, programmes, and partners in one place",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${poppins.variable} ${geistMono.variable} h-full`}>
-      <body className="h-full bg-white">
+      <body className="h-full bg-background">
         <TooltipProvider>
           <AppLayout>{children}</AppLayout>
         </TooltipProvider>

@@ -40,7 +40,7 @@ const SONAR_BLIPS = [
   { x: 58, y: 78 }, { x: 70, y: 80 }, { x: 46, y: 84 },
 ];
 
-const SONAR_AGENTS = ["MentorMatcher", "ProgrammeMatcher", "PartnerMatcher"];
+const SONAR_AGENTS = ["Mentors", "Programmes", "Partners"];
 
 function ScoreBar({ score, label, reason }: { score: number; label: string; reason: string }) {
   const color = score >= 4 ? "bg-emerald-500" : score >= 3 ? "bg-amber-400" : "bg-red-400";
@@ -296,12 +296,15 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
           <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Search className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="font-semibold text-gray-900 mb-2">Ready to run matching</h3>
+          <h3 className="font-semibold text-gray-900 mb-2">Ready to find matches</h3>
           <p className="text-sm text-gray-500 mb-6">
-            Our matching agent runs three specialists in parallel — one for mentors, one for programmes, and one for partners — to rank and score candidates. Rankings factor in past engagement outcomes from prior Cradle pairings.
+            The matching tool checks every mentor, programme, and partner in your
+            network and ranks them by how well they fit this startup. It also
+            looks at how similar past pairings turned out, so stronger track
+            records rank higher.
           </p>
           <div className="flex items-center justify-center gap-6 text-xs text-gray-400 mb-8">
-            {["Mentor matching", "Programme matching", "Partner matching"].map(a => (
+            {["Mentors", "Programmes", "Partners"].map(a => (
               <div key={a} className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-gray-300" />
                 {a}
@@ -309,7 +312,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
             ))}
           </div>
           <Button size="lg" onClick={runMatch}>
-            Run Matching Agents
+            <Search /> Run AI Matching
           </Button>
         </CardContent>
       </Card>
@@ -322,7 +325,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
         <CardContent className="p-12 flex flex-col items-center">
           <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 mb-8">
             <Radar className="w-4 h-4 animate-spin" style={{ animationDuration: "2.4s" }} />
-            MatchingOrchestrator · sweeping the ecosystem
+            AI Matching · scanning your network
           </div>
 
           {/* Sonar scope — concentric rings, a rotating sweep, and detected blips */}
@@ -383,8 +386,8 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
             </div>
           </div>
 
-          <h3 className="font-semibold text-gray-900 mb-1">Scanning matches for {companyName}…</h3>
-          <p className="text-sm text-gray-500 mb-6">3 ADK sub-agents sweeping mentors, programmes and partners in parallel</p>
+          <h3 className="font-semibold text-gray-900 mb-1">Finding matches for {companyName}…</h3>
+          <p className="text-sm text-gray-500 mb-6">Checking mentors, programmes, and partners at the same time</p>
 
           <div className="h-1.5 w-full max-w-sm bg-gray-100 rounded-full overflow-hidden mb-5">
             <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />

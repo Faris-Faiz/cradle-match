@@ -1,12 +1,27 @@
+import { CirclePlus } from "lucide-react";
 import OnboardWizard from "@/components/onboard-wizard";
+import PageHeader from "@/components/page-header";
+import OnboardingHint from "@/components/onboarding-hint";
 
 export default function NewCompanyPage() {
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Onboard New Startup</h1>
-        <p className="text-sm text-gray-500 mt-1">Upload a pitch deck to extract a structured company profile, then find mentor and programme matches.</p>
-      </div>
+    <div className="mx-auto max-w-3xl p-8">
+      <PageHeader
+        icon={CirclePlus}
+        title="Onboard a Startup"
+        description="Upload a pitch deck and we'll build a structured company profile for you. Review it, then move straight into finding matches."
+        breadcrumb={[
+          { label: "Companies", href: "/companies" },
+          { label: "Onboard a Startup" },
+        ]}
+      />
+
+      <OnboardingHint id="onboard" title="Three simple steps">
+        Follow the steps along the top: upload the pitch deck, check the details
+        we pulled out (you can edit anything), then save to start matching. No
+        technical knowledge needed.
+      </OnboardingHint>
+
       <OnboardWizard />
     </div>
   );

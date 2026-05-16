@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeftRight, Calendar, Check, ChevronRight, Loader2 } from "lucide-react";
-import type { Company, EmailDraft, Milestone, MatchRationale, Relationship } from "@/lib/types";
+import { ArrowLeftRight, Calendar, Check, Loader2, Mail, Send } from "lucide-react";
+import type {
+  Company,
+  EmailDraft,
+  Milestone,
+  MatchRationale,
+  Relationship,
+} from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,34 +21,69 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { pushSnackbar } from "@/components/ui/snackbar";
+import { Breadcrumb } from "@/components/page-header";
+import InfoHint from "@/components/info-hint";
 import { cn } from "@/lib/utils";
 
-const milestoneColors: Record<string, { bg: string; dot: string; label: string }> = {
-  pending: { bg: "bg-gray-50 border-gray-200", dot: "bg-gray-300", label: "Pending" },
-  on_track: { bg: "bg-emerald-50 border-emerald-200", dot: "bg-emerald-400", label: "On Track" },
-  at_risk: { bg: "bg-amber-50 border-amber-200", dot: "bg-amber-400", label: "At Risk" },
-  achieved: { bg: "bg-blue-50 border-blue-200", dot: "bg-blue-400", label: "Achieved" },
+const milestoneMeta: Record<
+  string,
+  { bg: string; dot: string; label: string }
+> = {
+  pending: { bg: "border-slate-200 bg-slate-50", dot: "bg-slate-300", label: "Not started" },
+  on_track: { bg: "border-emerald-200 bg-emerald-50", dot: "bg-emerald-400", label: "On track" },
+  at_risk: { bg: "border-amber-200 bg-amber-50", dot: "bg-amber-400", label: "At risk" },
+  achieved: { bg: "border-blue-200 bg-blue-50", dot: "bg-blue-400", label: "Achieved" },
 };
 
 const dimensionLabels: Record<keyof MatchRationale, string> = {
-  skill_fit: "Skill Fit",
-  stage_fit: "Stage Fit",
+  skill_fit: "Skill fit",
+  stage_fit: "Stage fit",
   chemistry: "Chemistry",
-  goal_alignment: "Goal Alignment",
+  goal_alignment: "Goal alignment",
+};
+
+const dimensionHints: Record<keyof MatchRationale, string> = {
+  skill_fit: "How well the candidate's expertise covers what this startup needs.",
+  stage_fit: "How much experience the candidate has with companies at this funding stage.",
+  chemistry: "How well the working styles and personalities are expected to mesh.",
+  goal_alignment: "How closely the candidate's focus matches the startup's current goals.",
+};
+
+const stateMeta: Record<string, { label: string; badge: string }> = {
+  Proposed: { label: "Proposed", badge: "bg-slate-100 text-slate-600" },
+  AwaitingReview: { label: "Awaiting review", badge: "bg-amber-100 text-amber-700" },
+  Active: { label: "Active", badge: "bg-emerald-100 text-emerald-700" },
+  Closed: { label: "Closed", badge: "bg-red-100 text-red-600" },
+};
+
+const targetTypeLabel: Record<string, string> = {
+  mentor: "Mentor",
+  programme: "Programme",
+  partner: "Partner",
 };
 
 function ScoreCell({ score, reason }: { score: number; reason: string }) {
-  const color = score >= 4 ? "text-emerald-600" : score >= 3 ? "text-amber-600" : "text-red-500";
-  const dots = Array.from({ length: 5 }, (_, i) => i < score);
+  const color =
+    score >= 4 ? "text-emerald-600" : score >= 3 ? "text-amber-600" : "text-red-500";
   return (
     <div>
-      <div className="flex items-center gap-1 mb-1">
-        {dots.map((filled, i) => (
-          <div key={i} className={`w-2.5 h-2.5 rounded-full ${filled ? (score >= 4 ? "bg-emerald-500" : "bg-amber-400") : "bg-gray-200"}`} />
+      <div className="mb-1 flex items-center gap-1">
+        {Array.from({ length: 5 }, (_, i) => (
+          <div
+            key={i}
+            className={cn(
+              "h-2.5 w-2.5 rounded-full",
+              i < score
+                ? score >= 4
+                  ? "bg-emerald-500"
+                  : "bg-amber-400"
+                : "bg-slate-200",
+            )}
+          />
         ))}
-        <span className={`text-xs font-bold ml-1 ${color}`}>{score}/5</span>
+        <span className={cn("ml-1 text-xs font-bold", color)}>{score}/5</span>
       </div>
-      <p className="text-xs text-gray-500 leading-relaxed">{reason}</p>
+      <p className="text-xs leading-relaxed text-muted-foreground">{reason}</p>
     </div>
   );
 }
@@ -76,16 +116,30 @@ export default function RelationshipDetail({
   const activate = async () => {
     setActivating(true);
     try {
-      const res = await fetch(`/api/relationships/${relationship.id}/activate`, { method: "POST" });
+      const res = await fetch(
+        `/api/relationships/${relationship.id}/activate`,
+        { method: "POST" },
+      );
       if (!res.ok) throw new Error(`Activation request failed (${res.status})`);
       const data = await res.json();
       if (data.milestones) setMilestones(data.milestones);
-      if (data.draft) { setDraft(data.draft); setDraftBody(data.draft.body); }
+      if (data.draft) {
+        setDraft(data.draft);
+        setDraftBody(data.draft.body);
+      }
       setActivated(true);
       const count = data.milestones?.length ?? 0;
-      pushSnackbar("success", "Relationship activated", `${count} milestones drafted${data.draft ? " and an intro email prepared" : ""}.`);
+      pushSnackbar(
+        "success",
+        "Relationship activated",
+        `${count} milestones drafted${data.draft ? " and an intro email prepared" : ""}.`,
+      );
     } catch (e) {
-      pushSnackbar("error", "Activation failed", e instanceof Error ? e.message : "Could not activate this relationship.");
+      pushSnackbar(
+        "error",
+        "Activation failed",
+        e instanceof Error ? e.message : "Could not activate this relationship.",
+      );
     } finally {
       setActivating(false);
     }
@@ -104,15 +158,24 @@ export default function RelationshipDetail({
       setTimeout(() => setDraftSaved(false), 2000);
       pushSnackbar("success", "Draft saved", "Your changes to the intro email are stored.");
     } catch (e) {
-      pushSnackbar("error", "Save failed", e instanceof Error ? e.message : "Could not save the email draft.");
+      pushSnackbar(
+        "error",
+        "Save failed",
+        e instanceof Error ? e.message : "Could not save the email draft.",
+      );
     } finally {
       setSavingDraft(false);
     }
   };
 
-  const updateMilestoneStatus = async (milestoneId: string, status: Milestone["status"]) => {
+  const updateMilestoneStatus = async (
+    milestoneId: string,
+    status: Milestone["status"],
+  ) => {
     const previous = milestones;
-    setMilestones(prev => prev.map(m => m.id === milestoneId ? { ...m, status } : m));
+    setMilestones((prev) =>
+      prev.map((m) => (m.id === milestoneId ? { ...m, status } : m)),
+    );
     try {
       const res = await fetch(`/api/milestones/${milestoneId}`, {
         method: "PATCH",
@@ -120,50 +183,59 @@ export default function RelationshipDetail({
         body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error(`Update request failed (${res.status})`);
-      const title = previous.find(m => m.id === milestoneId)?.title ?? "Milestone";
-      pushSnackbar("success", "Milestone updated", `${title} marked “${milestoneColors[status].label}”.`);
+      const title = previous.find((m) => m.id === milestoneId)?.title ?? "Milestone";
+      pushSnackbar(
+        "success",
+        "Milestone updated",
+        `${title} marked “${milestoneMeta[status].label}”.`,
+      );
     } catch (e) {
       // Roll back the optimistic update so the UI matches the server.
       setMilestones(previous);
-      pushSnackbar("error", "Update failed", e instanceof Error ? e.message : "Could not update the milestone.");
+      pushSnackbar(
+        "error",
+        "Update failed",
+        e instanceof Error ? e.message : "Could not update the milestone.",
+      );
     }
   };
 
-  const stateColor: Record<string, string> = {
-    Proposed: "bg-gray-100 text-gray-600",
-    AwaitingReview: "bg-amber-100 text-amber-700",
-    Active: "bg-emerald-100 text-emerald-700",
-    Closed: "bg-red-100 text-red-600",
-  };
+  const state = stateMeta[relationship.state] ?? stateMeta.Proposed;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-        <Link href="/dashboard" className="hover:text-gray-600">Dashboard</Link>
-        <ChevronRight className="w-3.5 h-3.5" />
-        <Link href={`/companies/${company?.id}`} className="hover:text-gray-600">{company?.name ?? "Company"}</Link>
-        <ChevronRight className="w-3.5 h-3.5" />
-        <span className="text-gray-900">Relationship</span>
-      </div>
+    <div className="mx-auto max-w-7xl p-8">
+      <Breadcrumb
+        trail={[
+          { label: "Companies", href: "/companies" },
+          {
+            label: company?.name ?? "Company",
+            href: company ? `/companies/${company.id}` : undefined,
+          },
+          { label: "Relationship" },
+        ]}
+      />
 
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      {/* Pairing header */}
+      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="flex items-center gap-2 text-2xl font-semibold text-gray-900">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xl font-semibold tracking-tight text-foreground">
               {company?.name}
-              <ArrowLeftRight className="w-5 h-5 text-gray-400 shrink-0" />
+            </span>
+            <ArrowLeftRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="text-xl font-semibold tracking-tight text-foreground">
               {targetName}
-            </h1>
-            <Badge variant="secondary" className={cn("capitalize", stateColor[relationship.state])}>
-              {relationship.state}
+            </span>
+            <Badge variant="secondary" className={state.badge}>
+              {state.label}
             </Badge>
           </div>
-          <p className="text-sm text-gray-500">{targetHeadline}</p>
-          <p className="text-xs text-gray-400 mt-1 capitalize">
-            {relationship.target_type} · Paired {new Date(relationship.created_at).toLocaleDateString()}
-            {relationship.score && ` · ${Math.round(relationship.score * 100)}% match`}
+          <p className="mt-1 text-sm text-muted-foreground">{targetHeadline}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {targetTypeLabel[relationship.target_type]} · Paired{" "}
+            {new Date(relationship.created_at).toLocaleDateString()}
+            {relationship.score &&
+              ` · ${Math.round(relationship.score * 100)}% match`}
           </p>
         </div>
 
@@ -171,87 +243,135 @@ export default function RelationshipDetail({
           <Button size="lg" onClick={activate} disabled={activating}>
             {activating ? (
               <>
-                <Loader2 className="animate-spin" />
-                Activating…
+                <Loader2 className="animate-spin" /> Activating…
               </>
             ) : (
               <>
-                Activate Relationship
+                <Check /> Activate Relationship
               </>
             )}
           </Button>
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      {!activated && !activating && (
+        <div className="mb-6 rounded-lg border border-primary/25 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Next step:</span>{" "}
+          activate this relationship to automatically draft starter milestones
+          and a ready-to-send introduction email.
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left: Rationale + Milestones */}
-        <div className="col-span-2 space-y-6">
-          {/* Match rationale */}
+        <div className="space-y-6 lg:col-span-2">
           {relationship.rationale && (
             <Card>
               <CardHeader>
-                <CardTitle>Match Rationale</CardTitle>
+                <CardTitle className="text-sm">
+                  Why this match was suggested
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-5">
-                  {(Object.entries(relationship.rationale) as [keyof MatchRationale, { score: number; reason: string }][]).map(
-                    ([dim, val]) => (
-                      <div key={dim}>
-                        <p className="text-xs font-semibold text-gray-700 mb-1.5">{dimensionLabels[dim]}</p>
-                        <ScoreCell score={val.score} reason={val.reason} />
-                      </div>
-                    )
-                  )}
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  {(
+                    Object.entries(relationship.rationale) as [
+                      keyof MatchRationale,
+                      { score: number; reason: string },
+                    ][]
+                  ).map(([dim, val]) => (
+                    <div key={dim}>
+                      <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-foreground">
+                        {dimensionLabels[dim]}
+                        <InfoHint label={dimensionLabels[dim]}>
+                          {dimensionHints[dim]}
+                        </InfoHint>
+                      </p>
+                      <ScoreCell score={val.score} reason={val.reason} />
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Milestones */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Milestones</CardTitle>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-sm">Milestones</CardTitle>
                 {!activated && !activating && (
-                  <p className="text-xs text-gray-400">Activate the relationship to generate AI milestones</p>
+                  <p className="text-xs text-muted-foreground">
+                    Activate to generate starter milestones
+                  </p>
                 )}
-                {activating && <p className="text-xs text-emerald-600 animate-pulse">MilestoneDrafter agent running…</p>}
+                {activating && (
+                  <p className="animate-pulse text-xs text-primary">
+                    Drafting milestones…
+                  </p>
+                )}
               </div>
             </CardHeader>
             <CardContent>
               {milestones.length === 0 ? (
-                <div className="text-center py-8 text-gray-400 text-sm">
-                  No milestones yet. Activate the relationship to generate milestones.
+                <div className="rounded-md border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+                  No milestones yet. Activate the relationship and we&apos;ll
+                  draft the first set of goals for you.
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {milestones.map(m => {
-                    const colors = milestoneColors[m.status];
+                  {milestones.map((m) => {
+                    const meta = milestoneMeta[m.status];
                     return (
-                      <div key={m.id} className={`border rounded-xl p-4 ${colors.bg}`}>
+                      <div
+                        key={m.id}
+                        className={cn("rounded-lg border p-4", meta.bg)}
+                      >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-2.5">
-                            <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${colors.dot}`} />
+                            <div
+                              className={cn(
+                                "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+                                meta.dot,
+                              )}
+                            />
                             <div>
-                              <p className="text-sm font-semibold text-gray-900">{m.title}</p>
-                              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{m.description}</p>
-                              <div className="flex items-center gap-3 mt-2">
-                                <span className="flex items-center gap-1 text-xs text-gray-400"><Calendar className="w-3 h-3 shrink-0" /> {m.target_date}</span>
-                                <Badge variant="outline" className="text-gray-400">{m.quarter}</Badge>
+                              <p className="text-sm font-semibold text-foreground">
+                                {m.title}
+                              </p>
+                              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                                {m.description}
+                              </p>
+                              <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Calendar className="h-3 w-3 shrink-0" />
+                                  {m.target_date}
+                                </span>
+                                <Badge variant="outline">{m.quarter}</Badge>
                                 {m.source === "ai_drafted" && (
-                                  <Badge variant="outline" className="bg-white text-gray-400">AI drafted</Badge>
+                                  <Badge variant="outline">AI draft</Badge>
                                 )}
                               </div>
                             </div>
                           </div>
-                          <Select value={m.status} onValueChange={(v) => updateMilestoneStatus(m.id, v as Milestone["status"])}>
-                            <SelectTrigger className="shrink-0 bg-white text-gray-600" size="sm">
+                          <Select
+                            value={m.status}
+                            onValueChange={(v) =>
+                              updateMilestoneStatus(
+                                m.id,
+                                v as Milestone["status"],
+                              )
+                            }
+                          >
+                            <SelectTrigger
+                              className="shrink-0 bg-card"
+                              size="sm"
+                            >
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="on_track">On Track</SelectItem>
-                              <SelectItem value="at_risk">At Risk</SelectItem>
+                              <SelectItem value="pending">Not started</SelectItem>
+                              <SelectItem value="on_track">On track</SelectItem>
+                              <SelectItem value="at_risk">At risk</SelectItem>
                               <SelectItem value="achieved">Achieved</SelectItem>
                             </SelectContent>
                           </Select>
@@ -265,76 +385,105 @@ export default function RelationshipDetail({
           </Card>
         </div>
 
-        {/* Right: Email draft */}
+        {/* Right: Company + Email draft */}
         <div className="space-y-6">
-          {/* Company summary */}
           {company && (
             <Card>
               <CardHeader>
-                <CardTitle>Company</CardTitle>
+                <CardTitle className="text-sm">Company</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-xs font-bold">{company.name[0]}</div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{company.name}</p>
-                      <p className="text-xs text-gray-500">{company.sector} · {company.stage}</p>
-                    </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-foreground text-xs font-bold text-background">
+                    {company.name[0]}
                   </div>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {company.needs.slice(0, 3).map(n => (
-                      <Badge key={n} variant="secondary" className="bg-gray-100 text-gray-600">{n}</Badge>
-                    ))}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {company.name}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {company.sector} · {company.stage}
+                    </p>
                   </div>
                 </div>
+                {company.needs.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {company.needs.slice(0, 4).map((n) => (
+                      <Badge key={n} variant="secondary">
+                        {n}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
 
-          {/* Email draft */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Intro Email Draft</CardTitle>
-                {draft && (
-                  <Badge variant="outline" className="bg-gray-50 text-gray-400">EmailDrafter agent</Badge>
-                )}
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  Introduction email
+                </CardTitle>
+                {draft && <Badge variant="outline">AI draft</Badge>}
               </div>
             </CardHeader>
             <CardContent>
               {!draft && !activating && (
-                <p className="text-xs text-gray-400 text-center py-4">Email draft will be generated when you activate the relationship.</p>
+                <p className="py-4 text-center text-xs text-muted-foreground">
+                  An introduction email will be drafted for you when you
+                  activate this relationship.
+                </p>
               )}
               {activating && (
-                <p className="text-xs text-emerald-600 text-center py-4 animate-pulse">EmailDrafter writing intro email…</p>
+                <p className="animate-pulse py-4 text-center text-xs text-primary">
+                  Writing the introduction email…
+                </p>
               )}
 
               {draft && (
                 <div className="space-y-3">
                   <div>
-                    <p className="text-xs font-medium text-gray-600 mb-1">Subject</p>
-                    <p className="text-xs text-gray-700 bg-gray-50 rounded-lg px-3 py-2">{draft.subject}</p>
+                    <p className="section-label mb-1">Subject</p>
+                    <p className="rounded-md bg-muted px-3 py-2 text-xs text-foreground">
+                      {draft.subject}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-600 mb-1">Body</p>
+                    <p className="section-label mb-1">Body — edit as needed</p>
                     <Textarea
-                      className="text-xs text-gray-700 resize-none"
+                      className="resize-none text-xs"
                       rows={10}
                       value={draftBody}
-                      onChange={e => setDraftBody(e.target.value)}
+                      onChange={(e) => setDraftBody(e.target.value)}
                     />
                   </div>
-                  <Button variant="outline" className="w-full" onClick={saveDraft} disabled={savingDraft}>
-                    {savingDraft ? "Saving…" : draftSaved ? <><Check /> Saved</> : "Save Draft"}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={saveDraft}
+                    disabled={savingDraft}
+                  >
+                    {savingDraft ? (
+                      "Saving…"
+                    ) : draftSaved ? (
+                      <>
+                        <Check /> Saved
+                      </>
+                    ) : (
+                      "Save Draft"
+                    )}
                   </Button>
                   {!draft.sent_at && (
                     <Button className="w-full">
-                      Mark as Sent
+                      <Send /> Mark as Sent
                     </Button>
                   )}
                   {draft.sent_at && (
-                    <p className="text-xs text-center text-gray-400">Sent {new Date(draft.sent_at).toLocaleDateString()}</p>
+                    <p className="text-center text-xs text-muted-foreground">
+                      Sent {new Date(draft.sent_at).toLocaleDateString()}
+                    </p>
                   )}
                 </div>
               )}

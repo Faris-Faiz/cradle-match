@@ -2,80 +2,143 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Building2, Plus, type LucideIcon } from "lucide-react";
+import {
+  LayoutDashboard,
+  Building2,
+  Network,
+  CirclePlus,
+  type LucideIcon,
+} from "lucide-react";
 
-// Collapsible overlay sidebar — icon-only at rest, expands to full width on hover.
+// Persistent operations rail — a dark frame with always-labelled navigation
+// grouped into sections so non-technical users see every destination at once.
 
-const nav: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/companies", label: "Portfolio", icon: Building2 },
-  { href: "/companies/new", label: "Onboard Startup", icon: Plus },
+interface NavItem {
+  href: string;
+  label: string;
+  hint: string;
+  icon: LucideIcon;
+}
+
+const navSections: { heading: string; items: NavItem[] }[] = [
+  {
+    heading: "Workspace",
+    items: [
+      {
+        href: "/dashboard",
+        label: "Overview",
+        hint: "Portfolio health at a glance",
+        icon: LayoutDashboard,
+      },
+      {
+        href: "/companies",
+        label: "Companies",
+        hint: "Every startup you manage",
+        icon: Building2,
+      },
+      {
+        href: "/network",
+        label: "Relationship Map",
+        hint: "See how everything connects",
+        icon: Network,
+      },
+    ],
+  },
+  {
+    heading: "Add",
+    items: [
+      {
+        href: "/companies/new",
+        label: "Onboard a Startup",
+        hint: "Upload a pitch deck to begin",
+        icon: CirclePlus,
+      },
+    ],
+  },
 ];
 
-// Portfolio stays active across every /companies/* route except the onboarding wizard.
+// "Companies" stays lit across company, matching, and relationship routes —
+// everything that belongs to a startup's file — but not the onboarding wizard.
 function isNavActive(href: string, pathname: string): boolean {
   if (href === "/companies") {
-    return pathname.startsWith("/companies") && pathname !== "/companies/new";
+    return (
+      (pathname.startsWith("/companies") && pathname !== "/companies/new") ||
+      pathname.startsWith("/relationships")
+    );
   }
-  return pathname === href;
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <>
-      {/* Spacer reserves the collapsed width; the aside below overlays content on hover. */}
-      <div className="w-16 shrink-0 bg-gray-900 z-10" />
-
-      <aside className="group w-16 hover:w-64 absolute left-0 top-0 h-full bg-gray-900 text-gray-100 flex flex-col z-40 transition-[width] duration-300 ease-in-out overflow-x-hidden whitespace-nowrap shadow-none hover:shadow-[4px_0_24px_rgba(0,0,0,0.25)]">
-        <div className="h-14 flex items-center px-4 shrink-0">
-          <div className="w-8 flex justify-center shrink-0">
-            <div className="w-7 h-7 rounded-md bg-emerald-500 flex items-center justify-center text-white font-bold text-sm">
-              C
-            </div>
-          </div>
-          <span className="font-semibold text-white tracking-tight text-sm ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+    <aside className="flex w-60 shrink-0 flex-col bg-gray-900 text-gray-300">
+      {/* Brand */}
+      <Link href="/dashboard" className="flex h-14 shrink-0 items-center gap-2.5 px-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
+          CM
+        </div>
+        <div className="leading-tight">
+          <p className="text-sm font-semibold tracking-tight text-white">
             Cradle Match
-          </span>
+          </p>
+          <p className="text-[10px] uppercase tracking-[0.12em] text-gray-500">
+            Operations Console
+          </p>
         </div>
-        <nav className="flex-1 py-4 space-y-0.5 px-3 overflow-y-auto overflow-x-hidden">
-          {nav.map(({ href, label, icon: Icon }) => {
-            const active = isNavActive(href, pathname);
+      </Link>
 
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center p-2 rounded-md text-sm transition-colors ${
-                  active
-                    ? "bg-gray-700 text-white font-medium"
-                    : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
-                }`}
-              >
-                <div className="w-6 flex justify-center shrink-0">
-                  <Icon className="w-5 h-5" />
-                </div>
-                <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                  {label}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="p-3 pb-6 flex items-center border-t border-gray-700">
-          <div className="w-10 flex justify-center shrink-0">
-            <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-bold">
-              L
+      {/* Navigation */}
+      <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+        {navSections.map((section) => (
+          <div key={section.heading}>
+            <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.09em] text-gray-500">
+              {section.heading}
+            </p>
+            <div className="space-y-0.5">
+              {section.items.map(({ href, label, hint, icon: Icon }) => {
+                const active = isNavActive(href, pathname);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    className={`group flex items-start gap-3 rounded-md px-2 py-2 transition-colors ${
+                      active
+                        ? "bg-gray-800 text-white"
+                        : "text-gray-400 hover:bg-gray-800/60 hover:text-gray-100"
+                    }`}
+                  >
+                    <Icon
+                      className={`mt-0.5 h-4.5 w-4.5 shrink-0 ${
+                        active ? "text-emerald-400" : "text-gray-500"
+                      }`}
+                    />
+                    <span className="min-w-0 leading-tight">
+                      <span className="block text-sm font-medium">{label}</span>
+                      <span className="block truncate text-[11px] text-gray-500">
+                        {hint}
+                      </span>
+                    </span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
-          <div className="flex-1 overflow-hidden ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <p className="text-xs font-medium text-gray-200 truncate">Labubu</p>
-            <p className="text-xs text-gray-500 truncate">Programme Manager</p>
-          </div>
+        ))}
+      </nav>
+
+      {/* Signed-in user */}
+      <div className="flex items-center gap-2.5 border-t border-white/10 px-4 py-3.5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-xs font-bold text-emerald-300">
+          L
         </div>
-      </aside>
-    </>
+        <div className="min-w-0 leading-tight">
+          <p className="truncate text-sm font-medium text-gray-100">Labubu</p>
+          <p className="truncate text-[11px] text-gray-500">Programme Manager</p>
+        </div>
+      </div>
+    </aside>
   );
 }
