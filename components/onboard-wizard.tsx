@@ -130,7 +130,7 @@ export default function OnboardWizard() {
                 <span className="text-2xl">📤</span>
               </div>
               <p className="text-sm font-medium text-gray-700">Drop pitch deck here</p>
-              <p className="text-xs text-gray-400 mt-1">PDF · Gemini 2.5 Pro will extract the company profile</p>
+              <p className="text-xs text-gray-400 mt-1">PDF · Gemini will extract the company profile</p>
             </div>
           )}
         </div>
@@ -161,7 +161,7 @@ export default function OnboardWizard() {
           <span className="text-3xl">🤖</span>
         </div>
         <h3 className="font-semibold text-gray-900 mb-1">Extracting company profile…</h3>
-        <p className="text-sm text-gray-500">Gemini 2.5 Pro is reading the pitch deck</p>
+        <p className="text-sm text-gray-500">Gemini is reading the pitch deck</p>
         <div className="mt-6 flex items-center justify-center gap-2">
           <div className="flex gap-1">
             {[0, 1, 2].map(i => (
@@ -200,7 +200,7 @@ export default function OnboardWizard() {
         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
           <span className="text-emerald-600 text-sm">✓</span>
           <span className="text-sm text-emerald-700 font-medium">Profile extracted from pitch deck</span>
-          <span className="text-xs text-emerald-500 ml-auto">Gemini 2.5 Pro · {new Date().toLocaleTimeString()}</span>
+          <span className="text-xs text-emerald-500 ml-auto">Gemini · {new Date().toLocaleTimeString()}</span>
         </div>
 
         {/* Form */}

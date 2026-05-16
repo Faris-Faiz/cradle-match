@@ -27,7 +27,7 @@ async function mockExtract(nameOverride?: string): Promise<ExtractedProfile> {
   return { ...MOCK_PROFILE, name: nameOverride || MOCK_PROFILE.name };
 }
 
-// ── Live: Gemini 2.5 Pro multimodal ──────────────────────────────────────────
+// ── Live: Gemini multimodal ──────────────────────────────────────────
 
 const EXTRACTION_PROMPT = `You are a startup profile extraction assistant for Cradle, Malaysia's national startup programme.
 
