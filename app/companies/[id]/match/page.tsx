@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import MatchingBoard from "@/components/matching-board";
 import { getCompany } from "@/lib/services/data";
@@ -7,8 +8,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const company = await getCompany(id);
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
+    <div className="p-8 max-w-7xl mx-auto">
+      <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
           <Link href="/companies" className="hover:text-gray-600">Portfolio</Link>
           <span>→</span>

@@ -67,11 +67,28 @@ export interface MatchRationale {
   goal_alignment: { score: number; reason: string };
 }
 
+// Past engagement data for a single target (mentor/programme/partner),
+// aggregated from prior relationships and their milestone outcomes. Feeds the
+// matching agents so proven track records influence future ranking.
+export interface EngagementSignal {
+  prior_pairings: number;
+  companies_engaged: number;
+  milestones_total: number;
+  milestones_achieved: number;
+  milestones_at_risk: number;
+  // achieved / (achieved + at_risk); null when no milestones have resolved yet
+  success_rate: number | null;
+  summary: string;
+}
+
 export interface MatchCandidate {
   target_type: TargetType;
   target_id: string;
   score: number;
   rationale: MatchRationale;
+  // Past engagement signal that informed this ranking; absent for targets
+  // with no prior Cradle engagements.
+  track_record?: EngagementSignal;
 }
 
 export interface Relationship {

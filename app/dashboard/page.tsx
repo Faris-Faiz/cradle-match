@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { ArrowRight, Plus } from "lucide-react";
 import { getCompanies, getRelationships, getMilestones, getMentor, getProgramme, getPartner } from "@/lib/services/data";
 import type { Milestone } from "@/lib/types";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
   on_track: "bg-emerald-100 text-emerald-800",
@@ -73,8 +78,8 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-semibold text-gray-900">Cohort Dashboard</h1>
           <p className="text-sm text-gray-500 mt-1">2026 Portfolio — Active Pairings & Milestone Health</p>
         </div>
-        <Link href="/companies/new" className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
-          <span>＋</span> Onboard Startup
+        <Link href="/companies/new" className={buttonVariants({ size: "lg" })}>
+          <Plus /> Onboard Startup
         </Link>
       </div>
 
@@ -85,14 +90,16 @@ export default async function DashboardPage() {
           { label: "Milestones Due (30d)", value: stats.milestones_due_soon, color: "text-blue-600" },
           { label: "At Risk", value: stats.milestones_at_risk, color: "text-amber-600" },
         ].map(stat => (
-          <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{stat.label}</p>
-            <p className={`text-3xl font-bold mt-1 ${stat.color}`}>{stat.value}</p>
-          </div>
+          <Card key={stat.label}>
+            <CardContent>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{stat.label}</p>
+              <p className={`text-3xl font-bold mt-1 ${stat.color}`}>{stat.value}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <Card className="py-0 gap-0 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-800 text-sm">Active Pairings</h2>
         </div>
@@ -121,7 +128,7 @@ export default async function DashboardPage() {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 capitalize">{relationship.target_type}</span>
+                  <Badge variant="secondary" className="capitalize">{relationship.target_type}</Badge>
                   <span className="text-sm text-gray-700 truncate font-medium">{target?.name ?? "—"}</span>
                 </div>
                 {target?.headline && <p className="text-xs text-gray-400 truncate mt-0.5">{target.headline}</p>}
@@ -141,20 +148,20 @@ export default async function DashboardPage() {
               </div>
 
               <div className="w-24 shrink-0 flex justify-end">
-                <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${statusColors[health]}`}>
+                <Badge variant="secondary" className={cn("capitalize", statusColors[health])}>
                   {health.replace("_", " ")}
-                </span>
+                </Badge>
               </div>
 
               <div className="shrink-0">
-                <Link href={`/relationships/${relationship.id}`} className="text-xs text-gray-400 hover:text-emerald-600 transition-colors font-medium">
-                  View →
+                <Link href={`/relationships/${relationship.id}`} className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 transition-colors font-medium">
+                  View <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

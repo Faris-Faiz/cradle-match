@@ -8,11 +8,15 @@ export async function GET() {
   ]);
 
   const activeRels = relationships.filter(r => r.state === "Active");
+  // Closed relationships carry historical milestones (the learning-loop data) —
+  // scope the dashboard to milestones owned by an active relationship only.
+  const activeRelIds = new Set(activeRels.map(r => r.id));
+  const activeMilestones = milestones.filter(m => m.relationship_id && activeRelIds.has(m.relationship_id));
 
   const pairings = await Promise.all(
     activeRels.map(async rel => {
       const company = companies.find(c => c.id === rel.company_id) ?? null;
-      const companyMilestones = milestones.filter(m => m.company_id === rel.company_id);
+      const relMilestones = milestones.filter(m => m.relationship_id === rel.id);
 
       let target: { name: string; headline?: string } | null = null;
       if (rel.target_type === "mentor") {
@@ -26,17 +30,17 @@ export async function GET() {
         target = p ? { name: p.org_name } : null;
       }
 
-      const atRisk = companyMilestones.filter(m => m.status === "at_risk").length;
-      const achieved = companyMilestones.filter(m => m.status === "achieved").length;
-      const health = atRisk > 0 ? "at_risk" : companyMilestones.length > 0 ? "on_track" : "pending";
+      const atRisk = relMilestones.filter(m => m.status === "at_risk").length;
+      const achieved = relMilestones.filter(m => m.status === "achieved").length;
+      const health = atRisk > 0 ? "at_risk" : relMilestones.length > 0 ? "on_track" : "pending";
 
       return {
         relationship: rel,
         company,
         target,
-        milestones: companyMilestones,
+        milestones: relMilestones,
         health,
-        milestone_summary: { total: companyMilestones.length, achieved, at_risk: atRisk },
+        milestone_summary: { total: relMilestones.length, achieved, at_risk: atRisk },
       };
     })
   );
@@ -44,8 +48,8 @@ export async function GET() {
   const stats = {
     total_companies: companies.length,
     active_pairings: activeRels.length,
-    milestones_at_risk: milestones.filter(m => m.status === "at_risk").length,
-    milestones_due_soon: milestones.filter(m => {
+    milestones_at_risk: activeMilestones.filter(m => m.status === "at_risk").length,
+    milestones_due_soon: activeMilestones.filter(m => {
       const diff = (new Date(m.target_date).getTime() - Date.now()) / 86400000;
       return diff >= 0 && diff <= 30 && m.status !== "achieved";
     }).length,
