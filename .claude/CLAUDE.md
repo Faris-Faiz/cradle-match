@@ -24,6 +24,7 @@ There are no automated tests.
 - **Firebase Admin / Firestore** — server-side only, lazily initialised
 - **Vertex AI / Gemini 2.5 Pro** — pitch deck extraction and candidate ranking
 - **Apify** — LinkedIn profile scraping
+- **lucide-react** — the single source for all UI icons
 
 ## Architecture
 
@@ -134,6 +135,14 @@ The codebase favours **sparse, high-signal comments**. Code is expected to be se
 - **Tooling directives** — keep ESLint/TS suppression comments scoped to the single line they affect and explain nothing further (e.g. `// eslint-disable-next-line no-var`).
 - **No JSDoc blocks.** The codebase does not use `/** … */` doc comments; types carry the contract. Don't add them unless documenting a genuinely subtle public API.
 - **Keep comments truthful.** When you change code, update or delete any comment it invalidates in the same edit. A stale comment is worse than none.
+
+### Icons
+
+- Use [`lucide-react`](https://lucide.dev) for **all** icons. Never render emoji or Unicode symbol glyphs (`✓`, `→`, `✕`, `↔`, `🤝`, `📄`, …) as UI icons in JSX — import a named icon instead.
+- Import icons by name: `import { ArrowRight, Check } from "lucide-react";`
+- Size icons with Tailwind classes (`className="w-4 h-4"`) and let them inherit colour via `currentColor` (the default); only set a colour class when the icon must differ from its surrounding text.
+- When an icon sits next to text inside a button or link, give the element `flex`/`inline-flex items-center gap-*` so the two align.
+- Emoji and symbols remain acceptable inside plain-text string content that is *not* rendered as an icon (e.g. the body of a generated email).
 
 ## Environment
 
