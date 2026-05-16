@@ -16,6 +16,25 @@ const stageColors: Record<string, string> = {
   "Series B+": "bg-orange-100 text-orange-700",
 };
 
+// Plain-language matching status — connections are formed automatically, so a
+// company moves Needs matching → Connections ready → Active as it progresses.
+function matchStatus(
+  active: number,
+  proposed: number,
+): { label: string; badge: string } {
+  if (active > 0)
+    return {
+      label: `${active} active connection${active !== 1 ? "s" : ""}`,
+      badge: "bg-emerald-100 text-emerald-700",
+    };
+  if (proposed > 0)
+    return {
+      label: `${proposed} connection${proposed !== 1 ? "s" : ""} ready to review`,
+      badge: "bg-blue-100 text-blue-700",
+    };
+  return { label: "Needs matching", badge: "bg-amber-100 text-amber-700" };
+}
+
 export default async function CompaniesPage() {
   const [companies, relationships, milestones] = await Promise.all([
     getCompanies(),
@@ -47,15 +66,21 @@ export default async function CompaniesPage() {
       <div className="space-y-3">
         {companies.map((company) => {
           const companyRels = relationships.filter(
-            (r) => r.company_id === company.id && r.state === "Active",
+            (r) => r.company_id === company.id,
           );
+          const activeCount = companyRels.filter(
+            (r) => r.state === "Active",
+          ).length;
+          const proposedCount = companyRels.filter(
+            (r) => r.state === "Proposed" || r.state === "AwaitingReview",
+          ).length;
+          const status = matchStatus(activeCount, proposedCount);
           const companyMilestones = milestones.filter(
             (m) => m.company_id === company.id,
           );
           const atRisk = companyMilestones.filter(
             (m) => m.status === "at_risk",
           ).length;
-          const matched = companyRels.length > 0;
 
           return (
             <Card key={company.id} className="transition-colors hover:border-primary/40">
@@ -80,15 +105,9 @@ export default async function CompaniesPage() {
                         {company.stage}
                       </Badge>
                       <Badge variant="outline">{company.sector}</Badge>
-                      {matched ? (
-                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
-                          Matched
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="bg-amber-100 text-amber-700">
-                          Needs matching
-                        </Badge>
-                      )}
+                      <Badge variant="secondary" className={status.badge}>
+                        {status.label}
+                      </Badge>
                       <span className="entity-id ml-auto hidden sm:inline">
                         {company.id}
                       </span>
@@ -101,12 +120,6 @@ export default async function CompaniesPage() {
                     <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                       <span>CEO · {company.ceo_name}</span>
                       <span>Founded {company.founded_year}</span>
-                      {matched && (
-                        <span className="font-medium text-primary">
-                          {companyRels.length} active pairing
-                          {companyRels.length !== 1 ? "s" : ""}
-                        </span>
-                      )}
                       {atRisk > 0 && (
                         <span className="font-medium text-amber-600">
                           {atRisk} milestone{atRisk !== 1 ? "s" : ""} at risk

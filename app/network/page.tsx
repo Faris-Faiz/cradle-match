@@ -67,8 +67,14 @@ export default async function NetworkPage() {
       id: r.id,
       source: r.company_id,
       target: r.target_id,
-      active: r.state === "Active",
-      scoreLabel: r.score ? `${Math.round(r.score * 100)}%` : undefined,
+      state:
+        r.state === "Active"
+          ? "active"
+          : r.state === "Closed"
+            ? "past"
+            : "proposed",
+      score: r.score ?? 0,
+      scoreLabel: r.score ? `${Math.round(r.score * 100)}%` : "—",
     }));
 
   return (

@@ -205,7 +205,7 @@ export default async function DashboardPage() {
           <EmptyState
             icon={Handshake}
             title="No active pairings yet"
-            description="Once you onboard a startup and approve a match, it will appear here so you can track its progress."
+            description="Onboard a startup and run matching — connections form automatically. Activate one and it appears here so you can track its progress."
             action={
               <Link href="/companies/new" className={buttonVariants()}>
                 <Plus /> Onboard your first startup

@@ -23,7 +23,14 @@ import {
 import { pushSnackbar } from "@/components/ui/snackbar";
 import { Breadcrumb } from "@/components/page-header";
 import InfoHint from "@/components/info-hint";
+import { matchStrength, type StrengthTier } from "@/lib/strength";
 import { cn } from "@/lib/utils";
+
+const strengthBadge: Record<StrengthTier, string> = {
+  strong: "bg-emerald-100 text-emerald-700",
+  moderate: "bg-amber-100 text-amber-700",
+  light: "bg-slate-100 text-slate-600",
+};
 
 const milestoneMeta: Record<
   string,
@@ -201,6 +208,8 @@ export default function RelationshipDetail({
   };
 
   const state = stateMeta[relationship.state] ?? stateMeta.Proposed;
+  const strength =
+    relationship.score != null ? matchStrength(relationship.score) : null;
 
   return (
     <div className="mx-auto max-w-7xl p-8">
@@ -229,13 +238,19 @@ export default function RelationshipDetail({
             <Badge variant="secondary" className={state.badge}>
               {state.label}
             </Badge>
+            {strength && (
+              <Badge
+                variant="secondary"
+                className={strengthBadge[strength.tier]}
+              >
+                {strength.label} match · {strength.percent}%
+              </Badge>
+            )}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">{targetHeadline}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {targetTypeLabel[relationship.target_type]} · Paired{" "}
+            {targetTypeLabel[relationship.target_type]} · Connected{" "}
             {new Date(relationship.created_at).toLocaleDateString()}
-            {relationship.score &&
-              ` · ${Math.round(relationship.score * 100)}% match`}
           </p>
         </div>
 

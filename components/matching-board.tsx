@@ -1,14 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { AlertTriangle, Check, ClipboardList, Crown, Handshake, HelpCircle, History, Radar, Search, Users } from "lucide-react";
-import type { CandidatesResult, EngagementSignal, MatchCandidate, MatchRationale } from "@/lib/types";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  ClipboardList,
+  Crown,
+  Handshake,
+  HelpCircle,
+  History,
+  Radar,
+  Search,
+  Users,
+} from "lucide-react";
+import type {
+  CandidatesResult,
+  EngagementSignal,
+  MatchCandidate,
+  MatchRationale,
+  RelationshipState,
+} from "@/lib/types";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { pushSnackbar } from "@/components/ui/snackbar";
+import { matchStrength, type StrengthTier } from "@/lib/strength";
 import { cn } from "@/lib/utils";
 
 interface TargetInfo {
@@ -17,11 +36,33 @@ interface TargetInfo {
   tags: string[];
 }
 
+// One auto-formed linkage returned by the match route.
+interface Connection {
+  target_id: string;
+  relationship_id: string;
+  state: RelationshipState;
+  created: boolean;
+}
+
+type MatchResponse = CandidatesResult & { connections: Connection[]; error?: string };
+
 const dimensionLabels: Record<keyof MatchRationale, string> = {
   skill_fit: "Skill Fit",
   stage_fit: "Stage Fit",
   chemistry: "Chemistry",
   goal_alignment: "Goal Alignment",
+};
+
+// Connection-strength styling, keyed by tier.
+const strengthText: Record<StrengthTier, string> = {
+  strong: "text-emerald-700",
+  moderate: "text-amber-700",
+  light: "text-slate-500",
+};
+const strengthBar: Record<StrengthTier, string> = {
+  strong: "bg-emerald-500",
+  moderate: "bg-amber-400",
+  light: "bg-slate-400",
 };
 
 // Sonar scan counter — deliberately non-linear (it repeats and jumps) so the
@@ -73,7 +114,7 @@ function ScoreBar({ score, label, reason }: { score: number; label: string; reas
 function TrackRecord({ signal }: { signal?: EngagementSignal }) {
   if (!signal) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2.5">
+      <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-3">
         <History className="w-3.5 h-3.5 shrink-0" />
         <span>No prior engagements — unproven match</span>
       </div>
@@ -86,7 +127,7 @@ function TrackRecord({ signal }: { signal?: EngagementSignal }) {
       ? "text-emerald-600"
       : "text-amber-600";
   return (
-    <div className={cn("flex items-start gap-1.5 text-xs mb-2.5", tone)}>
+    <div className={cn("flex items-start gap-1.5 text-xs mb-3", tone)}>
       <History className="w-3.5 h-3.5 shrink-0 mt-px" />
       <span className="leading-tight">{signal.summary}</span>
     </div>
@@ -96,30 +137,21 @@ function TrackRecord({ signal }: { signal?: EngagementSignal }) {
 function CandidateCard({
   candidate,
   info,
-  onApprove,
-  approved,
-  approving,
   isTop,
+  connection,
 }: {
   candidate: MatchCandidate;
   info: TargetInfo;
-  onApprove: () => void;
-  approved: boolean;
-  approving: boolean;
   isTop: boolean;
+  connection?: Connection;
 }) {
-  const totalScore = Math.round(candidate.score * 100);
+  const strength = matchStrength(candidate.score);
+  const isActive = connection?.state === "Active";
 
   return (
-    <Card
-      className={cn(
-        "h-full transition-all",
-        isTop && "ring-2 ring-emerald-400",
-        approved && "ring-emerald-300",
-      )}
-    >
+    <Card className={cn("h-full transition-all", isTop && "ring-2 ring-emerald-400")}>
       {/* Crowns the strongest candidate in the category so first-time users
-          know where to start. */}
+          can see the lead match at a glance. */}
       {isTop && (
         <div className="-mt-4 flex items-center gap-1.5 bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white">
           <Crown className="w-3.5 h-3.5" />
@@ -138,7 +170,9 @@ function CandidateCard({
             </div>
           </div>
           <div className="shrink-0 text-right">
-            <div className={`text-sm font-bold ${totalScore >= 80 ? "text-emerald-600" : "text-amber-600"}`}>{totalScore}%</div>
+            <div className={cn("text-sm font-bold", strengthText[strength.tier])}>
+              {strength.percent}%
+            </div>
             <div className="text-xs text-gray-400">match</div>
           </div>
         </div>
@@ -157,28 +191,46 @@ function CandidateCard({
 
         <TrackRecord signal={candidate.track_record} />
 
-        {approved ? (
-          <div className="flex items-center gap-2 bg-emerald-50 rounded-lg px-3 py-2 mt-auto">
-            <Check className="w-4 h-4 text-emerald-600" />
-            <span className="text-sm text-emerald-700 font-medium">Approved</span>
+        {/* Connection — auto-formed; strength reflects the match score. */}
+        <div className="mt-auto space-y-2.5">
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-xs font-medium text-gray-600">Connection strength</span>
+              <span className={cn("text-xs font-bold", strengthText[strength.tier])}>
+                {strength.label} · {strength.percent}%
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+              <div
+                className={cn("h-full rounded-full", strengthBar[strength.tier])}
+                style={{ width: `${strength.percent}%` }}
+              />
+            </div>
           </div>
-        ) : (
-          <Button onClick={onApprove} disabled={approving} className="w-full mt-auto">
-            {approving ? "Approving…" : "Approve"}
-          </Button>
-        )}
+          {connection ? (
+            <Link
+              href={`/relationships/${connection.relationship_id}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full")}
+            >
+              <Check />
+              {isActive ? "Active — Open" : "Connected — Open"}
+            </Link>
+          ) : (
+            <div className="rounded-md bg-gray-50 px-3 py-2 text-center text-xs text-gray-400">
+              Connection pending
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
 }
 
 export default function MatchingBoard({ companyId, companyName }: { companyId: string; companyName: string }) {
-  const router = useRouter();
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<CandidatesResult | null>(null);
   const [targetInfo, setTargetInfo] = useState<Record<string, TargetInfo>>({});
-  const [approved, setApproved] = useState<Record<string, string>>({});
-  const [approving, setApproving] = useState<string | null>(null);
+  const [connections, setConnections] = useState<Record<string, Connection>>({});
   const [progress, setProgress] = useState(0);
   const [scanned, setScanned] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -206,7 +258,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
 
     try {
       const res = await fetch(`/api/companies/${companyId}/match`, { method: "POST" });
-      const data: Partial<CandidatesResult> & { error?: string } = await res.json();
+      const data: Partial<MatchResponse> = await res.json();
 
       // The match route returns { error } on failure; bail before spreading.
       if (!res.ok || !data.mentors || !data.programmes || !data.partners) {
@@ -219,13 +271,21 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
         if (r.ok) info[c.target_id] = await r.json();
       }
 
+      const conns: Record<string, Connection> = {};
+      for (const c of data.connections ?? []) conns[c.target_id] = c;
+
       await minDuration;
       setScanned(SCAN_TARGET);
       setProgress(100);
       setTargetInfo(info);
+      setConnections(conns);
       setResult(data as CandidatesResult);
       const total = data.mentors.length + data.programmes.length + data.partners.length;
-      pushSnackbar("success", "Matching complete", `${total} candidates ranked across mentors, programmes and partners.`);
+      pushSnackbar(
+        "success",
+        "Connections formed automatically",
+        `${total} ecosystem partners linked to ${companyName} — no manual approval needed.`,
+      );
     } catch (e) {
       await minDuration;
       const message = e instanceof Error ? e.message : "Something went wrong while matching.";
@@ -234,41 +294,6 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
     } finally {
       clearInterval(timer);
       setRunning(false);
-    }
-  };
-
-  const approve = async (candidate: MatchCandidate) => {
-    setApproving(candidate.target_id);
-    try {
-      const res = await fetch("/api/relationships", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          company_id: companyId,
-          target_type: candidate.target_type,
-          target_id: candidate.target_id,
-          rationale: candidate.rationale,
-          score: candidate.score,
-        }),
-      });
-      if (!res.ok) throw new Error(`Approval request failed (${res.status})`);
-      const rel = await res.json();
-      setApproved(prev => ({ ...prev, [candidate.target_id]: rel.id }));
-      const name = targetInfo[candidate.target_id]?.name ?? candidate.target_id;
-      pushSnackbar("success", "Candidate approved", `${name} added as a proposed ${candidate.target_type}.`);
-    } catch (e) {
-      pushSnackbar("error", "Approval failed", e instanceof Error ? e.message : "Could not approve this candidate.");
-    } finally {
-      setApproving(null);
-    }
-  };
-
-  const activateApproved = () => {
-    const mentorRel = result?.mentors.map(m => approved[m.target_id]).find(Boolean);
-    if (mentorRel) {
-      router.push(`/relationships/${mentorRel}`);
-    } else {
-      pushSnackbar("info", "No mentor to activate", "Approve a mentor candidate to open its relationship.");
     }
   };
 
@@ -299,9 +324,9 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
           <h3 className="font-semibold text-gray-900 mb-2">Ready to find matches</h3>
           <p className="text-sm text-gray-500 mb-6">
             The matching tool checks every mentor, programme, and partner in your
-            network and ranks them by how well they fit this startup. It also
-            looks at how similar past pairings turned out, so stronger track
-            records rank higher.
+            network and ranks them by how well they fit this startup, factoring in
+            how past pairings turned out. Every match is then connected
+            automatically — you won&apos;t need to approve candidates one by one.
           </p>
           <div className="flex items-center justify-center gap-6 text-xs text-gray-400 mb-8">
             {["Mentors", "Programmes", "Partners"].map(a => (
@@ -353,14 +378,6 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
                   "conic-gradient(from 0deg, transparent 0deg 300deg, rgba(16,185,129,0.04) 320deg, rgba(16,185,129,0.32) 360deg)",
               }}
             />
-            {/* leading sweep spoke */}
-            {/* <div
-              className="absolute left-1/2 top-1/2 h-px w-1/2 origin-left animate-spin"
-              style={{
-                animationDuration: "2.4s",
-                background: "linear-gradient(to right, rgba(5,150,105,0.9), transparent)",
-              }}
-            /> */}
 
             {/* detected blips, revealed as the counter climbs */}
             {SONAR_BLIPS.map((b, i) => (
@@ -387,7 +404,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
           </div>
 
           <h3 className="font-semibold text-gray-900 mb-1">Finding matches for {companyName}…</h3>
-          <p className="text-sm text-gray-500 mb-6">Checking mentors, programmes, and partners at the same time</p>
+          <p className="text-sm text-gray-500 mb-6">Checking mentors, programmes, and partners, then forming connections</p>
 
           <div className="h-1.5 w-full max-w-sm bg-gray-100 rounded-full overflow-hidden mb-5">
             <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
@@ -420,23 +437,36 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
     { label: "Partners", key: "partners", candidates: result!.partners, icon: Handshake },
   ];
 
-  const anyApproved = Object.keys(approved).length > 0;
+  const total = result!.mentors.length + result!.programmes.length + result!.partners.length;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <p className="flex items-center gap-1.5 text-sm text-gray-500">
-          <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-          Matches ready — pick the candidates you&apos;d like to approve. A crown marks the strongest match in each category.
-        </p>
-        {anyApproved && (
-          <Button size="lg" onClick={activateApproved}>
-            Activate Approved ({Object.keys(approved).length})
-          </Button>
-        )}
+      {/* Auto-connection summary — replaces the old manual approval step. */}
+      <div className="mb-6 flex flex-col gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-2.5">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+          <div>
+            <p className="text-sm font-semibold text-emerald-900">
+              {total} connection{total !== 1 ? "s" : ""} formed automatically
+            </p>
+            <p className="mt-0.5 text-sm text-emerald-800/80">
+              Cradle Match linked {companyName} with {result!.mentors.length} mentor
+              {result!.mentors.length !== 1 ? "s" : ""}, {result!.programmes.length} programme
+              {result!.programmes.length !== 1 ? "s" : ""}, and {result!.partners.length} partner
+              {result!.partners.length !== 1 ? "s" : ""}. Each connection&apos;s strength reflects
+              its match score — open one to review it and start its milestones.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/network"
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "shrink-0 bg-white")}
+        >
+          View Relationship Map
+        </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {columns.map(col => {
           // The highest-scoring candidate in the category gets the crown.
           const topId = col.candidates.reduce<MatchCandidate | null>(
@@ -456,10 +486,8 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
                     key={c.target_id}
                     candidate={c}
                     info={targetInfo[c.target_id] ?? { name: c.target_id, subtitle: "", tags: [] }}
-                    onApprove={() => approve(c)}
-                    approved={!!approved[c.target_id]}
-                    approving={approving === c.target_id}
                     isTop={c.target_id === topId}
+                    connection={connections[c.target_id]}
                   />
                 ))}
               </div>

@@ -18,7 +18,7 @@ export default async function MatchPage({
       <PageHeader
         icon={Sparkles}
         title={`Find Matches for ${name}`}
-        description="AI ranks the best-fit mentors, programmes, and partners for this startup. Review the suggestions and approve the ones you want to pursue."
+        description="AI ranks the best-fit mentors, programmes, and partners — then connects this startup to each one automatically. Review the connections and their strengths below."
         breadcrumb={[
           { label: "Companies", href: "/companies" },
           { label: name, href: `/companies/${id}` },
@@ -27,9 +27,11 @@ export default async function MatchPage({
       />
 
       <OnboardingHint id="match" title="How matching works">
-        Run the matching tool and it checks your whole network in seconds,
-        scoring every candidate on fit. Each card explains <em>why</em> it was
-        suggested — approve a candidate to start a working relationship.
+        Run the matching tool and it scans your whole network in seconds,
+        scoring every candidate on fit. There&apos;s no approval step to do by
+        hand — every match becomes a connection automatically, with a{" "}
+        <em>strength</em> that reflects its score. Open any connection to review
+        it and start its milestones.
       </OnboardingHint>
 
       <MatchingBoard companyId={id} companyName={name} />

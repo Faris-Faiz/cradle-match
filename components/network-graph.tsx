@@ -28,12 +28,15 @@ export interface GraphNode {
   href?: string;
 }
 
+export type EdgeState = "active" | "proposed" | "past";
+
 export interface GraphEdge {
   id: string;
   source: string;
   target: string;
-  active: boolean;
-  scoreLabel?: string;
+  state: EdgeState;
+  score: number;
+  scoreLabel: string;
 }
 
 // ── Visual vocabulary ────────────────────────────────────────────────────────
@@ -46,6 +49,13 @@ const KIND_META: Record<
   mentor: { label: "Mentor", plural: "Mentors", color: "#059669", icon: GraduationCap },
   programme: { label: "Programme", plural: "Programmes", color: "#4f46e5", icon: ClipboardList },
   partner: { label: "Partner", plural: "Partners", color: "#d97706", icon: Handshake },
+};
+
+// Connection styling — auto-formed links read as "proposed" until activated.
+const EDGE_META: Record<EdgeState, { label: string; color: string }> = {
+  active: { label: "Active", color: "#059669" },
+  proposed: { label: "Proposed", color: "#34d399" },
+  past: { label: "Past", color: "#94a3b8" },
 };
 
 // ── Force simulation ─────────────────────────────────────────────────────────
@@ -365,7 +375,7 @@ export default function NetworkGraph({
 
   const isHidden = (n: GraphNode) => !shownKinds[n.kind];
   const edgeHidden = (e: GraphEdge) =>
-    (!e.active && !showClosed) ||
+    (e.state === "past" && !showClosed) ||
     isHidden(nodeById.get(e.source)!) ||
     isHidden(nodeById.get(e.target)!);
 
@@ -452,6 +462,9 @@ export default function NetworkGraph({
                 const lit =
                   !neighbours ||
                   (neighbours.has(e.source) && neighbours.has(e.target));
+                const past = e.state === "past";
+                // Thicker line = stronger match.
+                const weight = past ? 1.25 : 1.25 + e.score * 3.25;
                 return (
                   <line
                     key={e.id}
@@ -459,10 +472,11 @@ export default function NetworkGraph({
                     y1={a.y}
                     x2={b.x}
                     y2={b.y}
-                    stroke={e.active ? "#10b981" : "#94a3b8"}
-                    strokeWidth={lit ? (e.active ? 2 : 1.5) : 1}
-                    strokeDasharray={e.active ? undefined : "4 4"}
-                    strokeOpacity={lit ? 0.7 : 0.12}
+                    stroke={EDGE_META[e.state].color}
+                    strokeWidth={lit ? weight : Math.min(weight, 1)}
+                    strokeLinecap="round"
+                    strokeDasharray={past ? "4 5" : undefined}
+                    strokeOpacity={lit ? (past ? 0.5 : 0.85) : 0.12}
                   />
                 );
               })}
@@ -593,16 +607,12 @@ export default function NetworkGraph({
                         <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
                           {other.label}
                         </span>
-                        {e.scoreLabel && (
-                          <span className="entity-id">{e.scoreLabel}</span>
-                        )}
+                        <span className="entity-id">{e.scoreLabel}</span>
                         <span
-                          className={cn(
-                            "text-[10px] font-medium",
-                            e.active ? "text-primary" : "text-muted-foreground",
-                          )}
+                          className="text-[10px] font-semibold"
+                          style={{ color: EDGE_META[e.state].color }}
                         >
-                          {e.active ? "Active" : "Past"}
+                          {EDGE_META[e.state].label}
                         </span>
                       </Link>
                     );
@@ -639,21 +649,36 @@ export default function NetworkGraph({
                 </div>
               ))}
               <div className="flex items-center gap-2 pt-1">
-                <span className="h-0.5 w-6 rounded bg-primary" />
+                <span
+                  className="h-[3px] w-6 rounded"
+                  style={{ background: EDGE_META.active.color }}
+                />
                 <span className="text-xs text-foreground">
                   Active relationship
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span
+                  className="h-[3px] w-6 rounded"
+                  style={{ background: EDGE_META.proposed.color }}
+                />
+                <span className="text-xs text-foreground">
+                  Proposed connection
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
                   className="h-0 w-6 border-t-2 border-dashed"
-                  style={{ borderColor: "#94a3b8" }}
+                  style={{ borderColor: EDGE_META.past.color }}
                 />
                 <span className="text-xs text-foreground">
                   Past relationship
                 </span>
               </div>
             </div>
+            <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+              A thicker line means a stronger match between the two.
+            </p>
           </div>
         )}
       </div>
