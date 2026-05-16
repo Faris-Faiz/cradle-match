@@ -265,10 +265,10 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
           </div>
           <h3 className="font-semibold text-gray-900 mb-2">Ready to run matching</h3>
           <p className="text-sm text-gray-500 mb-6">
-            The MatchingOrchestrator ADK agent will spin up 3 sub-agents in parallel — MentorMatcher, ProgrammeMatcher, and PartnerMatcher — each using Gemini 2.5 Pro to rank and score candidates. Rankings factor in past engagement outcomes from prior Cradle pairings.
+            Our matching agent runs three specialists in parallel — one for mentors, one for programmes, and one for partners — to rank and score candidates. Rankings factor in past engagement outcomes from prior Cradle pairings.
           </p>
           <div className="flex items-center justify-center gap-6 text-xs text-gray-400 mb-8">
-            {["MentorMatcher", "ProgrammeMatcher", "PartnerMatcher"].map(a => (
+            {["Mentor matching", "Programme matching", "Partner matching"].map(a => (
               <div key={a} className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-gray-300" />
                 {a}

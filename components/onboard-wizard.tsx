@@ -147,7 +147,7 @@ export default function OnboardWizard() {
                 <Upload className="w-7 h-7 text-gray-400" />
               </div>
               <p className="text-sm font-medium text-gray-700">Drop pitch deck here</p>
-              <p className="text-xs text-gray-400 mt-1">PDF · Gemini will extract the company profile</p>
+              <p className="text-xs text-gray-400 mt-1">PDF · our extracting agent will pull out the company profile</p>
             </div>
           )}
         </div>
@@ -159,7 +159,7 @@ export default function OnboardWizard() {
             disabled={!file}
             className="flex-1"
           >
-            Extract Profile with Gemini
+            Extract Profile
           </Button>
           <Button
             variant="outline"
@@ -197,7 +197,7 @@ export default function OnboardWizard() {
         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
           <Check className="w-4 h-4 text-emerald-600" />
           <span className="text-sm text-emerald-700 font-medium">Profile extracted from pitch deck</span>
-          <span className="text-xs text-emerald-500 ml-auto">Gemini · {new Date().toLocaleTimeString()}</span>
+          <span className="text-xs text-emerald-500 ml-auto">Extracting agent · {new Date().toLocaleTimeString()}</span>
         </div>
 
         {/* Form */}
@@ -251,7 +251,7 @@ export default function OnboardWizard() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-gray-900 text-sm">CEO LinkedIn Enrichment</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Apify scraper · pulls headline, education, past roles</p>
+                <p className="text-xs text-gray-500 mt-0.5">Pulls the CEO&apos;s headline, education, and past roles from LinkedIn</p>
               </div>
               <Button
                 variant="outline"
@@ -264,7 +264,7 @@ export default function OnboardWizard() {
                   </>
                 ) : (
                   <>
-                    Enrich via Apify
+                    Enrich Profile
                   </>
                 )}
               </Button>
@@ -342,7 +342,7 @@ function ExtractionLoader() {
         <div className="ext-loading-container">
           <div className="ext-loading-title">Extracting Company Profile</div>
           <div className="ext-loading-subtitle">
-            Gemini 2.5 Pro is reading the pitch deck<span className="ext-dots" />
+            Our extracting agent is reading the pitch deck<span className="ext-dots" />
           </div>
           <div className="ext-progress-track">
             <div className="ext-progress-fill" />
