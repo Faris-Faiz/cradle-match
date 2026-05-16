@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, ChevronUp, ClipboardList, Handshake, Radar, Search, Users } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, ChevronUp, ClipboardList, Handshake, Radar, Search, Users } from "lucide-react";
 import type { CandidatesResult, MatchCandidate, MatchRationale } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,13 +41,18 @@ const SONAR_BLIPS = [
 const SONAR_AGENTS = ["MentorMatcher", "ProgrammeMatcher", "PartnerMatcher"];
 
 function ScoreBar({ score, label }: { score: number; label: string }) {
-  const pct = (score / 5) * 100;
   const color = score >= 4 ? "bg-emerald-500" : score >= 3 ? "bg-amber-400" : "bg-red-400";
   return (
     <div className="flex items-center gap-2">
       <span className="text-xs text-gray-500 w-24 shrink-0">{label}</span>
-      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+      <div className="flex items-center gap-1 flex-1">
+        {[1, 2, 3, 4, 5].map(n => (
+          <div
+            key={n}
+            className={cn("h-2 flex-1 rounded-full", n <= score ? color : "bg-gray-200")}
+            title={`${label} — ${score}/5`}
+          />
+        ))}
       </div>
       <span className="text-xs font-semibold text-gray-700 w-4 text-right">{score}</span>
     </div>
@@ -71,8 +76,8 @@ function CandidateCard({
   const totalScore = Math.round(candidate.score * 100);
 
   return (
-    <Card className={cn("transition-all", approved && "ring-emerald-300")}>
-      <CardContent>
+    <Card className={cn("h-full transition-all", approved && "ring-emerald-300")}>
+      <CardContent className="flex flex-1 flex-col">
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg bg-gray-900 text-white flex items-center justify-center text-sm font-bold shrink-0">
@@ -123,12 +128,12 @@ function CandidateCard({
         )}
 
         {approved ? (
-          <div className="flex items-center gap-2 bg-emerald-50 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2 bg-emerald-50 rounded-lg px-3 py-2 mt-auto">
             <Check className="w-4 h-4 text-emerald-600" />
             <span className="text-sm text-emerald-700 font-medium">Approved</span>
           </div>
         ) : (
-          <Button onClick={onApprove} disabled={approving} className="w-full">
+          <Button onClick={onApprove} disabled={approving} className="w-full mt-auto">
             {approving ? "Approving…" : "Approve"}
           </Button>
         )}
@@ -146,11 +151,13 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
   const [approving, setApproving] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [scanned, setScanned] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const runMatch = async () => {
     setRunning(true);
     setProgress(0);
     setScanned(0);
+    setError(null);
 
     // Step the sonar counter through SCAN_SEQUENCE; repeated values make the
     // sweep visibly stall, mimicking a real scan ranking noisy candidates.
@@ -167,22 +174,33 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
     // even when the mock API resolves near-instantly.
     const minDuration = new Promise(resolve => setTimeout(resolve, SCAN_SEQUENCE.length * SCAN_STEP_MS));
 
-    const res = await fetch(`/api/companies/${companyId}/match`, { method: "POST" });
-    const data: CandidatesResult = await res.json();
+    try {
+      const res = await fetch(`/api/companies/${companyId}/match`, { method: "POST" });
+      const data: Partial<CandidatesResult> & { error?: string } = await res.json();
 
-    const info: Record<string, TargetInfo> = {};
-    for (const c of [...data.mentors, ...data.programmes, ...data.partners]) {
-      const r = await fetch(`/api/target-info/${c.target_type}/${c.target_id}`);
-      if (r.ok) info[c.target_id] = await r.json();
+      // The match route returns { error } on failure; bail before spreading.
+      if (!res.ok || !data.mentors || !data.programmes || !data.partners) {
+        throw new Error(data.error ?? `Match request failed (${res.status})`);
+      }
+
+      const info: Record<string, TargetInfo> = {};
+      for (const c of [...data.mentors, ...data.programmes, ...data.partners]) {
+        const r = await fetch(`/api/target-info/${c.target_type}/${c.target_id}`);
+        if (r.ok) info[c.target_id] = await r.json();
+      }
+
+      await minDuration;
+      setScanned(SCAN_TARGET);
+      setProgress(100);
+      setTargetInfo(info);
+      setResult(data as CandidatesResult);
+    } catch (e) {
+      await minDuration;
+      setError(e instanceof Error ? e.message : "Something went wrong while matching.");
+    } finally {
+      clearInterval(timer);
+      setRunning(false);
     }
-
-    await minDuration;
-    clearInterval(timer);
-    setScanned(SCAN_TARGET);
-    setProgress(100);
-    setTargetInfo(info);
-    setResult(data);
-    setRunning(false);
   };
 
   const approve = async (candidate: MatchCandidate) => {
@@ -207,6 +225,23 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
     const mentorRel = result?.mentors.map(m => approved[m.target_id]).find(Boolean);
     if (mentorRel) router.push(`/relationships/${mentorRel}`);
   };
+
+  if (!running && error) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-12 text-center">
+          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-500" />
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-2">Matching scan failed</h3>
+          <p className="text-sm text-gray-500 mb-6">{error}</p>
+          <Button size="lg" onClick={runMatch}>
+            Retry Scan
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!running && !result) {
     return (
@@ -360,7 +395,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
               <h3 className="font-semibold text-gray-800 text-sm">{col.label}</h3>
               <Badge variant="secondary">{col.candidates.length}</Badge>
             </div>
-            <div className="space-y-4">
+            <div className="grid auto-rows-fr gap-4">
               {col.candidates.map(c => (
                 <CandidateCard
                   key={c.target_id}
