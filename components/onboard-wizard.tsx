@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Bot, Check, ChevronRight, FileText, Loader2, MapPin, Plus, Upload, X } from "lucide-react";
+import { Bot, Check, ChevronRight, FileText, Loader2, MapPin, Plus, Upload, X } from "lucide-react";
 import type { Company } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -149,7 +149,7 @@ export default function OnboardWizard() {
             disabled={!file}
             className="flex-1"
           >
-            Extract Profile with Gemini <ArrowRight />
+            Extract Profile with Gemini
           </Button>
           <Button
             variant="outline"
@@ -278,7 +278,7 @@ export default function OnboardWizard() {
                   </>
                 ) : (
                   <>
-                    Enrich via Apify <ArrowRight />
+                    Enrich via Apify
                   </>
                 )}
               </Button>
@@ -303,7 +303,7 @@ export default function OnboardWizard() {
           onClick={handleSaveAndMatch}
           className="w-full"
         >
-          Save Profile &amp; Find Matches <ArrowRight />
+          Save Profile &amp; Find Matches
         </Button>
       </div>
     );

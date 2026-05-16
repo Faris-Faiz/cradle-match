@@ -158,6 +158,7 @@ The UI is built from **shadcn/ui** components in [components/ui/](components/ui/
   - Form fields → `<Input>`, `<Textarea>`, `<Label>`.
   - Dropdowns → `<Select>` with `SelectTrigger`/`SelectValue`/`SelectContent`/`SelectItem` (Base UI `Select.Root` takes `value` + `onValueChange`).
 - Place lucide icons as children of `<Button>`/`<Badge>` — they auto-size; don't add manual `w-4 h-4` or `flex items-center gap-2`.
+- **Buttons must never contain arrow icons.** Never put `ArrowRight`/`ArrowLeft` (or any directional →/← glyph) inside a `<Button>` or a `buttonVariants`-styled link. Functional icons — `Plus`, `Check`, `Loader2`, a `ChevronDown` disclosure toggle — remain fine.
 - Merge conditional classes with `cn()` from [lib/utils.ts](lib/utils.ts).
 - The brand colour is the `--primary` theme token (emerald) in [app/globals.css](app/globals.css). Prefer the `<Button>` `default` variant and `bg-primary`/`text-primary` over hard-coded `bg-emerald-600`. Incidental emerald/amber/gray utility classes for backgrounds and status colours are fine.
 

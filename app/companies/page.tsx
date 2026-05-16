@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { getCompanies, getRelationships, getMilestones } from "@/lib/services/data";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,7 +69,7 @@ export default async function CompaniesPage() {
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <Link href={`/companies/${company.id}/match`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-                      Find Matches <ArrowRight />
+                      Find Matches
                     </Link>
                     <Link href={`/companies/${company.id}`} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
                       View Profile

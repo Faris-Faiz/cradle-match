@@ -51,7 +51,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
         <Link href={`/companies/${id}/match`} className={buttonVariants({ size: "lg" })}>
-          Find Matches <ArrowRight />
+          Find Matches
         </Link>
       </div>
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, ChevronDown, ChevronUp, ClipboardList, Handshake, Loader2, Search, Users } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, ClipboardList, Handshake, Loader2, Search, Users } from "lucide-react";
 import type { CandidatesResult, MatchCandidate, MatchRationale } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -111,7 +111,7 @@ function CandidateCard({
           </div>
         ) : (
           <Button onClick={onApprove} disabled={approving} className="w-full">
-            {approving ? "Approving…" : <>Approve <ArrowRight /></>}
+            {approving ? "Approving…" : "Approve"}
           </Button>
         )}
       </CardContent>
@@ -195,7 +195,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
             ))}
           </div>
           <Button size="lg" onClick={runMatch}>
-            Run Matching Agents <ArrowRight />
+            Run Matching Agents
           </Button>
         </CardContent>
       </Card>
@@ -246,7 +246,7 @@ export default function MatchingBoard({ companyId, companyName }: { companyId: s
         </p>
         {anyApproved && (
           <Button size="lg" onClick={activateApproved}>
-            Activate Approved ({Object.keys(approved).length}) <ArrowRight />
+            Activate Approved ({Object.keys(approved).length})
           </Button>
         )}
       </div>

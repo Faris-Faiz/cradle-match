@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeftRight, ArrowRight, Calendar, Check, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowLeftRight, Calendar, Check, ChevronRight, Loader2 } from "lucide-react";
 import type { Company, EmailDraft, Milestone, MatchRationale, Relationship } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -150,7 +150,7 @@ export default function RelationshipDetail({
               </>
             ) : (
               <>
-                Activate Relationship <ArrowRight />
+                Activate Relationship
               </>
             )}
           </Button>
@@ -304,7 +304,7 @@ export default function RelationshipDetail({
                   </Button>
                   {!draft.sent_at && (
                     <Button className="w-full">
-                      Mark as Sent <ArrowRight />
+                      Mark as Sent
                     </Button>
                   )}
                   {draft.sent_at && (
