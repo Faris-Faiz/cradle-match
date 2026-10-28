@@ -30,24 +30,24 @@ async function apifyEnrich(linkedinUrl: string): Promise<CeoProfile> {
 
   const client = new ApifyClient({ token: process.env.APIFY_API_TOKEN! });
 
-  const run = await client.actor(process.env.APIFY_ACTOR_ID ?? "apify/linkedin-profile-scraper").call({
-    startUrls: [{ url: linkedinUrl }],
-    proxyConfiguration: { useApifyProxy: true },
+  const run = await client.actor(process.env.APIFY_ACTOR_ID ?? "johnvc/linkedin-profile-api").call({
+    profileUrls: [linkedinUrl],
   });
 
   const { items } = await client.dataset(run.defaultDatasetId).listItems();
   const profile = items[0] as Record<string, unknown> | undefined;
 
   if (!profile) throw new Error("Apify returned no results for LinkedIn URL");
+  if (profile.error_message) throw new Error(`Apify could not fetch LinkedIn URL: ${profile.error_message}`);
 
   const positions = (profile.positions as { title: string; companyName: string }[] | undefined) ?? [];
-  const education = (profile.education as { schoolName: string; fieldOfStudy?: string; degreeName?: string }[] | undefined) ?? [];
+  const education = (profile.education as { title: string; fieldOfStudy?: string; degreeName?: string }[] | undefined) ?? [];
 
   return {
     headline: (profile.headline as string) ?? "",
     current_role: positions[0] ? `${positions[0].title}, ${positions[0].companyName}` : "",
     education: education.map(e =>
-      [e.degreeName, e.fieldOfStudy, e.schoolName].filter(Boolean).join(", ")
+      [e.degreeName, e.fieldOfStudy, e.title].filter(Boolean).join(", ")
     ),
     past_roles: positions.slice(1, 4).map(p => `${p.title}, ${p.companyName}`),
   };
