@@ -221,7 +221,7 @@ GCS_BUCKET_NAME=cradle-decks
 
 # ── Apify (LinkedIn enrichment) ──
 APIFY_API_TOKEN=your-apify-token
-APIFY_ACTOR_ID=apify/linkedin-profile-scraper
+APIFY_ACTOR_ID=johnvc/linkedin-profile-api
 
 # ── App URL ──
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -252,7 +252,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 1. Sign up at [apify.com](https://apify.com)
 2. Go to **Settings → Integrations → API tokens**
 3. Create a token and paste it into `APIFY_API_TOKEN`
-4. Leave `APIFY_ACTOR_ID=apify/linkedin-profile-scraper` as-is
+4. Leave `APIFY_ACTOR_ID=johnvc/linkedin-profile-api` as-is
 
 ---
 
